@@ -1,3 +1,4 @@
+const vendorRoutes = require('./routes/vendorRoutes');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -12,6 +13,7 @@ app.use(cors());         // Frontend connection allow karne ke liye
 
 // Routes connect karna
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/vendors', vendorRoutes);
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)
