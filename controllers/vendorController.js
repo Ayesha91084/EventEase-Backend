@@ -1,4 +1,4 @@
-const Vendor = require('../models/Vendor');
+const Vendor = require('../models/VendorProfile');
 const User = require('../models/User');
 
 const registerVendor = async (req, res) => {

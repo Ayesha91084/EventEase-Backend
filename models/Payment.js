@@ -1,13 +1,12 @@
 const mongoose = require('mongoose');
 
-const PaymentSchema = new mongoose.Schema({
-    booking: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', required: true },
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+const paymentSchema = new mongoose.Schema({
+    bookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     amount: { type: Number, required: true },
-    paymentMethod: { type: String, default: 'Stripe/Sandbox' },
-    status: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
-    transactionId: { type: String },
-    createdAt: { type: Date, default: Date.now }
-});
+    method: { type: String, default: 'online' }, // e.g., Card, EasyPaisa
+    status: { type: String, enum: ['success', 'failed', 'pending'], default: 'success' },
+    transactionId: { type: String, required: true }
+}, { timestamps: true });
 
-module.exports = mongoose.model('Payment', PaymentSchema);
+module.exports = mongoose.model('Payment', paymentSchema);
