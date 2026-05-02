@@ -3,7 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
-
+const adminRoutes = require('./routes/adminRoutes');
+const authRoutes = require('./routes/authRoutes');
 dotenv.config();
 const app = express();
 
@@ -12,11 +13,11 @@ app.use(express.json());
 app.use(cors()); 
 
 // Routes connect karna
-const adminRoutes = require('./routes/adminRoutes');
+
 app.use('/api/admin', adminRoutes);
 
 
-const authRoutes = require('./routes/authRoutes');
+
 app.use('/api/auth', authRoutes);
 
 
