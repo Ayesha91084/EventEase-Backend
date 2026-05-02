@@ -33,8 +33,7 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 
-// User schema ke andar fields define karne ke baad ye add karein:
-userSchema.index({ email: 1 }, { unique: true }); // Faster login/signup check
+// User schema ke andar fields define karne ke baad ye add karei  // Faster login/signup check
 userSchema.index({ role: 1 }); // Faster filtering for Admin dashboard
 
 module.exports = mongoose.model('User', userSchema);
