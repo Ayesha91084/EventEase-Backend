@@ -1,10 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const { getAllUsers, deleteUser } = require('../controllers/adminController');
-const { protect, isAdmin } = require('../middleware/authMiddleware');
+const { protect, admin } = require('../middleware/authMiddleware');
 
-// Sabse pehle 'protect' (login check) phir 'isAdmin' (role check)
-router.get('/users', protect, isAdmin, getAllUsers);
-router.delete('/user/:id', protect, isAdmin, deleteUser);
+// Dono middleware (protect aur admin) lagana zaroori hain
+router.get('/users', protect, admin, getAllUsers);
+router.delete('/user/:id', protect, admin, deleteUser);
+
+
+
+module.exports = router;
+const express = require('express');
+const router = express.Router();
+const { getDashboardSummary } = require('../controllers/adminController');
+const { protect, admin } = require('../middleware/authMiddleware');
+
+// Dashboard summary sirf login admin dekh sakta hai
+router.get('/summary', protect, admin, getDashboardSummary);
 
 module.exports = router;
