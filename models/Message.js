@@ -4,3 +4,4 @@ const messageSchema = new mongoose.Schema({
     message: { type: String, required: true },
     type: { type: String, default: 'text' }
 }, { timestamps: true });
+messageSchema.index({ chatId: 1 });

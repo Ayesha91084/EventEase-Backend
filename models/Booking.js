@@ -17,5 +17,10 @@ const bookingSchema = new mongoose.Schema({
         default: 'pending' 
     }
 }, { timestamps: true });
+bookingSchema.index({ customerId: 1 }); // Customer apni history dekh sakay[cite: 7]
+bookingSchema.index({ vendorId: 1 }); // Vendor apne orders dekh sakay[cite: 7]
+
+
+
 
 module.exports = mongoose.model('Booking', bookingSchema);

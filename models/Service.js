@@ -31,4 +31,7 @@ const serviceSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+serviceSchema.index({ categoryId: 1 }); // Category wise search ke liye
+serviceSchema.index({ price: 1 }); // Price range filter ke liye
+
 module.exports = mongoose.model('Service', serviceSchema);
