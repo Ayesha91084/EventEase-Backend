@@ -12,6 +12,11 @@ app.use(express.json());
 app.use(cors()); 
 
 // Routes connect karna
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
+
+
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/vendors', vendorRoutes);
