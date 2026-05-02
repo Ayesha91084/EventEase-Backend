@@ -13,7 +13,15 @@ const protect = (req, res, next) => {
     }
 };
 
-// Check if user is Vendor
+// Admin check karne ke liye naya function
+const isAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        return res.status(403).json({ msg: "Access denied. Admins only." });
+    }
+};
+
 const isVendor = (req, res, next) => {
     if (req.user.role !== 'vendor') {
         return res.status(403).json({ msg: "Access denied. Vendors only." });
@@ -21,4 +29,4 @@ const isVendor = (req, res, next) => {
     next();
 };
 
-module.exports = { protect, isVendor };
+module.exports = { protect, isAdmin, isVendor };
