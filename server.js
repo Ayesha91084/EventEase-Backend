@@ -8,17 +8,23 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(express.json()); // JSON data read karne ke liye
-app.use(cors());         // Frontend connection allow karne ke liye
+app.use(express.json()); 
+app.use(cors()); 
 
 // Routes connect karna
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/vendors', vendorRoutes);
+
+// Test Route (Deployment check karne ke liye)
+app.get("/", (req, res) => {
+    res.send("EventEase API is running...");
+});
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("MongoDB Connected..."))
     .catch(err => console.log(err));
 
-const PORT = 5000;
+// Port configuration for deployment
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
