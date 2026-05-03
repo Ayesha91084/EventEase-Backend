@@ -47,7 +47,7 @@ module.exports = { getAllUsers, deleteUser, getDashboardStats };
 
 module.exports = { getAllUsers, deleteUser };
 
-const User = require('../models/User');
+//const User = require('../models/User');
 
 // Admin Dashboard Summary API
 const getDashboardSummary = async (req, res) => {
