@@ -72,4 +72,10 @@ const getDashboardSummary = async (req, res) => {
     }
 };
 
-module.exports = { getDashboardSummary }; // Isay export lazmi karein
+//module.exports = { getDashboardSummary }; // Isay export lazmi karein
+// adminController.js ke end par
+module.exports = { 
+    getAllUsers, 
+    deleteUser, 
+    getDashboardSummary // Check karein ye spelling sahi hain
+};
