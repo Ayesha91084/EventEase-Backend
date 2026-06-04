@@ -22,7 +22,7 @@ app.use('/api/auth', authRoutes);
 
 
 
-app.use('/api/admin', require('./routes/adminRoutes'));
+//app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/vendors', vendorRoutes);
 
