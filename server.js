@@ -5,12 +5,22 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const adminRoutes = require('./routes/adminRoutes');
 const authRoutes = require('./routes/authRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+
+
 dotenv.config();
 const app = express();
 
 // Middleware
 app.use(express.json()); 
 app.use(cors()); 
+// Existing route imports ke sath ye add karo
+//const bookingRoutes = require('./routes/bookingRoutes');
+
+// Express middleware ke neechay routes define karo
+app.use('/api/bookings', bookingRoutes);
+
+
 
 // Routes connect karna
 
