@@ -20,6 +20,7 @@ app.use(cors());
 
 // Express middleware ke neechay routes define karo
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/payments', require('./routes/paymentRoutes'));
 
 
 
