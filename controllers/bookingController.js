@@ -1,6 +1,6 @@
-const Booking = require('../models/Booking'); // Tumhara existing Booking model
+const Booking = require('../models/Booking');
 
-// @desc    Create a new booking with date conflict check
+// @desc    Create a new booking
 // @route   POST /api/bookings/book
 // @access  Private (Customer Only)
 const createBooking = async (req, res) => {
@@ -10,56 +10,39 @@ const createBooking = async (req, res) => {
         const { serviceId, vendorId, eventDate, totalAmount } = req.body;
         const customerId = req.user ? req.user.id : null; // authMiddleware se login user ki ID
 
-        // 1. Authentication check
-        if (!customerId) {
-            return res.status(401).json({ success: false, message: "User authentication failed. Token missing or invalid." });
-        }
-
-        // 2. Validation check (Yahan syntax strict kar diya hai)
+        // Validation check
         if (!serviceId || !vendorId || !eventDate || !totalAmount) {
-            return res.status(400).json({ 
-                success: false, 
+            return res.status(400).json({
+                success: false,
                 message: "Please provide all required fields.",
                 receivedFields: { serviceId, vendorId, eventDate, totalAmount }
             });
         }
 
-        // 3. Check karo ke is date par pehle se koi confirmed ya pending booking hai ya nahi
-        const existingBooking = await Booking.findOne({
-            serviceId,
-            eventDate: new Date(eventDate),
-            status: { $in: ['pending', 'confirmed'] }
-        });
-
-        // 4. Agar double-booking ho rhi ho to rok do
-        if (existingBooking) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "This date is already booked or has a pending payment for this service." 
-            });
-        }
-
-        // 5. Database me booking create karo
-        const newBooking = await Booking.create({
-            customerId,
-            vendorId,
-            serviceId,
-            eventDate: new Date(eventDate),
-            totalAmount: Number(totalAmount),
+        // Naya booking record create karein
+        const newBooking = new Booking({
+            customer: customerId,
+            vendor: vendorId,
+            service: serviceId,
+            eventDate,
+            totalAmount,
             status: 'pending',
             paymentStatus: 'pending'
         });
 
+        const savedBooking = await newBooking.save();
+
         return res.status(201).json({
             success: true,
             message: "Slot temporary reserved! Please proceed to payment.",
-            booking: newBooking
+            booking: savedBooking
         });
 
     } catch (error) {
-        console.error("Booking Error:", error);
+        console.error("Booking Controller Error:", error);
         return res.status(500).json({ success: false, message: error.message });
     }
 };
 
+// Agar koi aur function pehle tha toh export me add rkhna
 module.exports = { createBooking };
