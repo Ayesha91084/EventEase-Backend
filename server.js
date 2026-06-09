@@ -15,7 +15,8 @@ const app = express();
 app.use(express.json()); 
 app.use(cors()); 
 // Existing route imports ke sath ye add karo
-//const bookingRoutes = require('./routes/bookingRoutes');
+
+// const bookingRoutes = require('./routes/bookingRoutes');
 
 // Express middleware ke neechay routes define karo
 app.use('/api/bookings', bookingRoutes);
