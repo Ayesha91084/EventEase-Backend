@@ -36,6 +36,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes); // Double import ka masla hal kar dia
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/chat', chatRoutes); 
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 // Test Route
 app.get("/", (req, res) => {
