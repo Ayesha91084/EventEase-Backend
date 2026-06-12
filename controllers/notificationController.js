@@ -10,30 +10,29 @@ const sendEmailNotification = async (req, res) => {
             return res.status(400).json({ success: false, message: "Please provide to, subject, and text fields." });
         }
 
-        // 1. Nodemailer Transporter Setup using your App Password
+        // Mailtrap Config (Bina kisi security block ke chalega)
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: process.env.EMAIL_HOST,
+            port: process.env.EMAIL_PORT,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
             }
         });
 
-        // 2. Email Details
         const mailOptions = {
-            from: process.env.EMAIL_USER,
+            from: '"EventEase System" <no-reply@eventease.com>',
             to: to,
             subject: subject,
             text: text
         };
 
-        // 3. Send Email
         const info = await transporter.sendMail(mailOptions);
-        console.log("Email sent successfully: ", info.response);
+        console.log("Email captured by Mailtrap: ", info.response);
 
         return res.status(200).json({
             success: true,
-            message: "Notification Email Sent Successfully!",
+            message: "Notification Email Sent Successfully (Captured by Mailtrap)!",
             messageId: info.messageId
         });
 
