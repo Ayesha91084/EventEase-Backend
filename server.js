@@ -12,6 +12,7 @@ const authRoutes = require('./routes/authRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const chatRoutes = require('./routes/chatRoutes'); 
+const ratingRoutes = require('./routes/ratingRoutes');
 
 dotenv.config();
 const app = express();
@@ -37,6 +38,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/vendors', vendorRoutes); // 👈 Yeh pehle se connect tha, is se hamara kaam ho jayega!
 app.use('/api/chat', chatRoutes); 
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/ratings', ratingRoutes);
 
 // Test Route
 app.get("/", (req, res) => {
