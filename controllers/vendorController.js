@@ -45,5 +45,49 @@ const registerVendor = async (req, res) => {
         res.status(500).json({ message: "Server Error", error: error.message });
     }
 };
-// File ke aakhir mein ye lazmi likhen
-module.exports = { registerVendor };
+
+// 👇 OPENSTREETMAP COORDINATES UPDATE CONTROLLER 👇
+const updateVendorLocation = async (req, res) => {
+    try {
+        const { latitude, longitude } = req.body;
+
+        // Validation check
+        if (latitude === undefined || longitude === undefined) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Please provide both latitude and longitude values." 
+            });
+        }
+
+        // Database Update Logic: req.user.id se profile find kar ke update karega
+        const updatedProfile = await Vendor.findOneAndUpdate(
+            { user: req.user.id }, // original schema mein 'user' field use ho rahi hai
+            { 
+                $set: { 
+                    "location.latitude": Number(latitude), 
+                    "location.longitude": Number(longitude) 
+                } 
+            },
+            { new: true }
+        );
+
+        if (!updatedProfile) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Vendor profile not found for this authenticated user." 
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "OpenStreetMap coordinates updated successfully!",
+            data: updatedProfile.location
+        });
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    }
+};
+
+// Dono functions ko export kar diya hai
+module.exports = { registerVendor, updateVendorLocation };

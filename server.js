@@ -8,10 +8,10 @@ const { Server } = require('socket.io');
 // Sahi Route Imports
 const vendorRoutes = require('./routes/vendorRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const authRoutes = require('./routes/authRoutes'); // Sahi name
+const authRoutes = require('./routes/authRoutes'); 
 const bookingRoutes = require('./routes/bookingRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
-const chatRoutes = require('./routes/chatRoutes'); // Chat routes bhee add kar diye
+const chatRoutes = require('./routes/chatRoutes'); 
 
 dotenv.config();
 const app = express();
@@ -33,8 +33,8 @@ app.use(cors());
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/auth', authRoutes); // Double import ka masla hal kar dia
-app.use('/api/vendors', vendorRoutes);
+app.use('/api/auth', authRoutes); 
+app.use('/api/vendors', vendorRoutes); // 👈 Yeh pehle se connect tha, is se hamara kaam ho jayega!
 app.use('/api/chat', chatRoutes); 
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 
