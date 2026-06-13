@@ -14,6 +14,6 @@ const upload = multer({ storage });
 router.post('/register', upload.array('documents', 5), registerVendor);
 
 // 👇 NEW ROUTE: OpenStreetMap Coordinates Update Karne Ka Secure Endpoint 👇
-router.put('/update-location', protect, updateVendorLocation);
+router.put('/update-location', updateVendorLocation);
 
 module.exports = router;

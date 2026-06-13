@@ -49,19 +49,20 @@ const registerVendor = async (req, res) => {
 // 👇 OPENSTREETMAP COORDINATES UPDATE CONTROLLER 👇
 const updateVendorLocation = async (req, res) => {
     try {
-        const { latitude, longitude } = req.body;
+        // Ab hum body se latitude, longitude aur vendorId teeno nikalenge
+        const { latitude, longitude, vendorId } = req.body;
 
         // Validation check
-        if (latitude === undefined || longitude === undefined) {
+        if (latitude === undefined || longitude === undefined || !vendorId) {
             return res.status(400).json({ 
                 success: false, 
-                message: "Please provide both latitude and longitude values." 
+                message: "Please provide latitude, longitude, and vendorId." 
             });
         }
 
-        // Database Update Logic: req.user.id se profile find kar ke update karega
+        // Database Update Logic: Yeh vendorId ke mutabiq profile update karega
         const updatedProfile = await Vendor.findOneAndUpdate(
-            { user: req.user.id }, // original schema mein 'user' field use ho rahi hai
+            { _id: vendorId }, // Vendor profile ki apni ID ya jo bhi database mein hai
             { 
                 $set: { 
                     "location.latitude": Number(latitude), 
@@ -74,7 +75,7 @@ const updateVendorLocation = async (req, res) => {
         if (!updatedProfile) {
             return res.status(404).json({ 
                 success: false, 
-                message: "Vendor profile not found for this authenticated user." 
+                message: "Vendor profile not found with this ID." 
             });
         }
 
@@ -88,6 +89,8 @@ const updateVendorLocation = async (req, res) => {
         res.status(500).json({ success: false, message: "Server Error", error: error.message });
     }
 };
+
+           
 
 // Dono functions ko export kar diya hai
 module.exports = { registerVendor, updateVendorLocation };
