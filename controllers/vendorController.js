@@ -3,25 +3,26 @@ const User = require('../models/User');
 
 const registerVendor = async (req, res) => {
     try {
-        const { userId, businessName, businessType, location, description, documents } = req.body;
+        // Tumhare schema ke mutabiq yahan 'user' hi aayega (jo customer ki ID hoti hai)
+        const { user, businessName, businessType, location, description, documents } = req.body;
 
-        const user = await User.findById(userId);
-        if (!user) {
+        // Original database verification check
+        const userCheck = await User.findById(user);
+        if (!userCheck) {
             return res.status(404).json({ message: "User nahi mila!" });
         }
 
-        // SOLUTION: Pehle check karo req.files hai ya nahi
+        // Files handle karne ki logic
         let documentUrls = [];
         if (req.files && req.files.length > 0) {
-            // Agar file upload ki hai (automatic)
             documentUrls = req.files.map(file => file.path);
         } else {
-            // Agar Thunder Client se direct links bheje hain (manual)
-            documentUrls = documents;
+            documentUrls = documents || [];
         }
 
+        // Naya vendor profile banana tumhare original schema fields ke sath
         const newVendor = new Vendor({
-            user: userId,
+            user, // Sahi schema field
             businessName,
             category: businessType, 
             location,
@@ -32,8 +33,9 @@ const registerVendor = async (req, res) => {
 
         await newVendor.save();
 
-        user.role = 'vendor';
-        await user.save();
+        // User ka role update kar ke 'vendor' karna
+        userCheck.role = 'vendor';
+        await userCheck.save();
 
         res.status(201).json({
             success: true,
@@ -49,7 +51,6 @@ const registerVendor = async (req, res) => {
 // 👇 OPENSTREETMAP COORDINATES UPDATE CONTROLLER 👇
 const updateVendorLocation = async (req, res) => {
     try {
-        // Ab hum body se latitude, longitude aur vendorId teeno nikalenge
         const { latitude, longitude, vendorId } = req.body;
 
         // Validation check
@@ -60,9 +61,9 @@ const updateVendorLocation = async (req, res) => {
             });
         }
 
-        // Database Update Logic: Yeh vendorId ke mutabiq profile update karega
+        // Database Update Logic
         const updatedProfile = await Vendor.findOneAndUpdate(
-            { _id: vendorId }, // Vendor profile ki apni ID ya jo bhi database mein hai
+            { _id: vendorId }, 
             { 
                 $set: { 
                     "location.latitude": Number(latitude), 
@@ -89,8 +90,6 @@ const updateVendorLocation = async (req, res) => {
         res.status(500).json({ success: false, message: "Server Error", error: error.message });
     }
 };
-
-           
 
 // Dono functions ko export kar diya hai
 module.exports = { registerVendor, updateVendorLocation };
