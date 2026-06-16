@@ -1,3 +1,4 @@
+require('dotenv').config();
 const vendorRoutes = require('./routes/vendorRoutes');
 const express = require('express');
 const mongoose = require('mongoose');
