@@ -1,27 +1,28 @@
-const Vendor = require('../models/Vendor');
+const Vendor = require('../models/VendorProfile');
 const User = require('../models/User');
 
 const registerVendor = async (req, res) => {
     try {
-        const { userId, businessName, businessType, location, description, documents } = req.body;
+        // Tumhare schema ke mutabiq yahan 'user' hi aayega (jo customer ki ID hoti hai)
+        const { user, businessName, businessType, location, description, documents } = req.body;
 
-        const user = await User.findById(userId);
-        if (!user) {
+        // Original database verification check
+        const userCheck = await User.findById(user);
+        if (!userCheck) {
             return res.status(404).json({ message: "User nahi mila!" });
         }
 
-        // SOLUTION: Pehle check karo req.files hai ya nahi
+        // Files handle karne ki logic
         let documentUrls = [];
         if (req.files && req.files.length > 0) {
-            // Agar file upload ki hai (automatic)
             documentUrls = req.files.map(file => file.path);
         } else {
-            // Agar Thunder Client se direct links bheje hain (manual)
-            documentUrls = documents;
+            documentUrls = documents || [];
         }
 
+        // Naya vendor profile banana tumhare original schema fields ke sath
         const newVendor = new Vendor({
-            user: userId,
+            user, // Sahi schema field
             businessName,
             category: businessType, 
             location,
@@ -32,8 +33,9 @@ const registerVendor = async (req, res) => {
 
         await newVendor.save();
 
-        user.role = 'vendor';
-        await user.save();
+        // User ka role update kar ke 'vendor' karna
+        userCheck.role = 'vendor';
+        await userCheck.save();
 
         res.status(201).json({
             success: true,
@@ -45,5 +47,49 @@ const registerVendor = async (req, res) => {
         res.status(500).json({ message: "Server Error", error: error.message });
     }
 };
-// File ke aakhir mein ye lazmi likhen
-module.exports = { registerVendor };
+
+// 👇 OPENSTREETMAP COORDINATES UPDATE CONTROLLER 👇
+const updateVendorLocation = async (req, res) => {
+    try {
+        const { latitude, longitude, vendorId } = req.body;
+
+        // Validation check
+        if (latitude === undefined || longitude === undefined || !vendorId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Please provide latitude, longitude, and vendorId." 
+            });
+        }
+
+        // Database Update Logic
+        const updatedProfile = await Vendor.findOneAndUpdate(
+            { _id: vendorId }, 
+            { 
+                $set: { 
+                    "location.latitude": Number(latitude), 
+                    "location.longitude": Number(longitude) 
+                } 
+            },
+            { new: true }
+        );
+
+        if (!updatedProfile) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Vendor profile not found with this ID." 
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "OpenStreetMap coordinates updated successfully!",
+            data: updatedProfile.location
+        });
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server Error", error: error.message });
+    }
+};
+
+// Dono functions ko export kar diya hai
+module.exports = { registerVendor, updateVendorLocation };

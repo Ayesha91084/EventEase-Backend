@@ -1,27 +1,39 @@
 const mongoose = require('mongoose');
 
-const UserSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { 
-        type: String, 
-        enum: ['user', 'vendor', 'admin'], 
-        default: 'user' 
+const userSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true
     },
-    isBlocked: {
-    type: Boolean,
-    default: false
-
+    email: {
+        type: String,
+        required: true,
+        unique: true
     },
+    password: {
+        type: String,
+        required: true
+    },
+    role: {
+        type: String,
+        enum: ['customer', 'vendor', 'admin'],
+        default: 'customer'
+    },
+    phone: {
+        type: String
+    },
+    profileImage: {
+        type: String,
+        default: ""
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    }
+}, { timestamps: true });
 
 
+// User schema ke andar fields define karne ke baad ye add karei  // Faster login/signup check
+userSchema.index({ role: 1 }); // Faster filtering for Admin dashboard
 
-    createdAt: { type: Date, default: Date.now }
-
-
-}
-
-);
-
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model('User', userSchema);
