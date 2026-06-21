@@ -130,7 +130,8 @@ const updateVendorLocation = async (req, res) => {
                     "location.longitude": Number(longitude) 
                 } 
             },
-            { new: true }
+           // { new: true }
+           { returnDocument: 'after' }
         );
 
         if (!updatedProfile) {
