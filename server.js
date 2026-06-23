@@ -1,5 +1,4 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('http'); 
@@ -62,11 +61,6 @@ io.on('connection', (socket) => {
         console.log('User Disconnected', socket.id);
     });
 });
-
-// Database Connection
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("MongoDB Connected..."))
-    .catch(err => console.log("MongoDB Connection Error:", err.message));
 
 // Server Listen
 const PORT = process.env.PORT || 5000;
