@@ -16,32 +16,56 @@ const ratingRoutes = require('./routes/ratingRoutes');
 dotenv.config();
 const app = express();
 
+// Allowed Origins for Live Production (Vercel & Localhost)
+const allowedOrigins = [
+    'https://event-ease-frontend-main.vercel.app',
+    'https://eventease-frontend-main.vercel.app', // Safe back-up url
+    'http://localhost:3000',
+    'http://localhost:5173'
+];
+
+// Middleware Configuration
+app.use(express.json());
+
+// Proper CORS Configuration for Live Handshake
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 // Create HTTP Server for Socket.io
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+        origin: allowedOrigins,
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
-
-// Middleware
-app.use(express.json());
-app.use(cors());
 
 // Sahi Middleware Route Connections
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes); 
-app.use('/api/vendors', vendorRoutes); // 👈 Yeh pehle se connect tha, is se hamara kaam ho jayega!
+app.use('/api/vendors', vendorRoutes);
 app.use('/api/chat', chatRoutes); 
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/ratings', ratingRoutes);
 
-// Test Route
+// Test Route to check if Backend is alive in browser
 app.get("/", (req, res) => {
-    res.send("EventEase API with Socket.io is running...");
+    res.status(200).send("EventEase API with Socket.io is running perfectly live!");
 });
 
 // Socket.io Real-time Chat Connection
@@ -64,4 +88,4 @@ io.on('connection', (socket) => {
 
 // Server Listen
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Live Server started on port ${PORT}`));
