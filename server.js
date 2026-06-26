@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('http'); 
 const { Server } = require('socket.io'); 
+const mongoose = require('mongoose');
 
 // Sahi Route Imports
 const vendorRoutes = require('./routes/vendorRoutes');
@@ -87,5 +88,10 @@ io.on('connection', (socket) => {
 });
 
 // Server Listen
+// Database Connection
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log("MongoDB Connected..."))
+    .catch(err => console.log("MongoDB Connection Error:", err.message));
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Live Server started on port ${PORT}`));
