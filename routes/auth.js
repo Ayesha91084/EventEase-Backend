@@ -24,18 +24,17 @@ router.post('/signup', async (req, res) => {
         // Create JWT Token
         const token = jwt.sign(
             { id: user._id, role: user.role }, 
-            "YOUR_SECRET_KEY", // Keep this in .env later
+            process.env.JWT_SECRET, // Keep this in .env later
             { expiresIn: '1h' }
         );
 
         res.status(201).json({ token, user: { id: user._id, name, email, role } });
 
     } catch (err) {
-        res.status(500).send("Server Error");
+        res.status(500).json({ message: "Server Error", error: err.message });
     }
 });
 
-module.exports = router;
 
 // LOGIN API
 router.post('/login', async (req, res) => {
@@ -53,13 +52,14 @@ router.post('/login', async (req, res) => {
         // Token create karein
         const token = jwt.sign(
             { id: user._id, role: user.role }, 
-            "YOUR_SECRET_KEY", 
+            process.env.JWT_SECRET, 
             { expiresIn: '1h' }
         );
 
         res.json({ token, user: { id: user._id, name: user.name, role: user.role } });
 
     } catch (err) {
-        res.status(500).send("Server Error");
+        res.status(500).json({ message: "Server Error", error: err.message });
     }
 });
+module.exports = router;
