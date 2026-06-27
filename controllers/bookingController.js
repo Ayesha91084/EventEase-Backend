@@ -8,7 +8,10 @@ const createBooking = async (req, res) => {
         console.log("Postman se aya hua data:", req.body);
 
         const { serviceId, vendorId, eventDate, totalAmount } = req.body;
-        const customerId = req.user ? req.user.id : null; // authMiddleware se login user ki ID
+        //const customerId = req.user ? req.user.id : null; // authMiddleware se login user ki ID
+        if (!customerId) {
+    return res.status(401).json({ success: false, message: "Unauthorized! Please login first." });
+}
 
         // Validation check
         if (!serviceId || !vendorId || !eventDate || !totalAmount) {

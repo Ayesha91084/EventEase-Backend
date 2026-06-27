@@ -1,11 +1,12 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('http'); 
 const { Server } = require('socket.io'); 
+const mongoose = require('mongoose');
+const { Pool } = require('pg'); // SQL Driver Imported
 
-// Sahi Route Imports
+// Route Imports
 const vendorRoutes = require('./routes/vendorRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const authRoutes = require('./routes/authRoutes'); 
@@ -17,57 +18,71 @@ const ratingRoutes = require('./routes/ratingRoutes');
 dotenv.config();
 const app = express();
 
-// Create HTTP Server for Socket.io
+const allowedOrigins = [
+    'https://event-ease-frontend-main.vercel.app',
+    'https://eventease-frontend-main.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+];
+
+app.use(express.json());
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
+    cors: { origin: allowedOrigins, methods: ["GET", "POST"], credentials: true }
 });
 
-// Middleware
-app.use(express.json());
-app.use(cors());
-
-// Sahi Middleware Route Connections
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes); 
-app.use('/api/vendors', vendorRoutes); // 👈 Yeh pehle se connect tha, is se hamara kaam ho jayega!
+app.use('/api/vendors', vendorRoutes);
 app.use('/api/chat', chatRoutes); 
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/ratings', ratingRoutes);
 
-// Test Route
 app.get("/", (req, res) => {
-    res.send("EventEase API with Socket.io is running...");
+    res.status(200).send("EventEase Dual Database (MongoDB + PostgreSQL) is running live!");
 });
 
-// Socket.io Real-time Chat Connection
+// Socket.io Connection
 io.on('connection', (socket) => {
-    console.log(`User Connected: ${socket.id}`);
-
-    socket.on('join_room', (roomId) => {
-        socket.join(roomId);
-        console.log(`User joined room: ${roomId}`);
-    });
-
-    socket.on('send_message', (data) => {
-        socket.to(data.room).emit('receive_message', data);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('User Disconnected', socket.id);
-    });
+    socket.on('join_room', (roomId) => socket.join(roomId));
+    socket.on('send_message', (data) => socket.to(data.room).emit('receive_message', data));
 });
 
-// Database Connection
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("MongoDB Connected..."))
-    .catch(err => console.log(err));
+// ==========================================
+// 🛠️ DUAL DATABASE CONFIGURATION (SATH SATH)
+// ==========================================
 
-// Server Listen
+// 1. Try Connecting MongoDB (Safe Mode)
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log("✅ MongoDB Connected Successfully..."))
+    .catch(err => console.log("⚠️ MongoDB Network Blocked, but Server is keeping alive! Error:", err.message));
+
+// 2. Try Connecting PostgreSQL
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+});
+
+pool.connect()
+    .then(() => console.log("✅ PostgreSQL Connected Successfully for EventEase!"))
+    .catch(err => console.log("❌ PostgreSQL Connection Error:", err.message));
+
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Live Server started on port ${PORT}`));
