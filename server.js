@@ -19,8 +19,7 @@ dotenv.config();
 const app = express();
 
 const allowedOrigins = [
-    'https://event-ease-frontend-main.vercel.app',
-    'https://eventease-frontend-main.vercel.app',
+    'https://event-ease-frontend-djx3.vercel.app',
     'http://localhost:3000',
     'http://localhost:5173'
 ];
