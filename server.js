@@ -21,6 +21,7 @@ const app = express();
 const allowedOrigins = [
     'https://event-ease-frontend-djx3.vercel.app',
     'https://event-ease-frontend-kaqn.vercel.app',
+    'https://event-ease-frontend-vr25.vercel.app',
     'http://localhost:3000',
     'http://localhost:5173'
 ];
