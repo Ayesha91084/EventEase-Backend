@@ -6,6 +6,14 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const { Pool } = require('pg'); // SQL Driver Imported
 
+// Keep-Alive General health API to prevent Render from sleeping
+app.get('/api/health-check', (req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "Server is Active and Awake!",
+    timestamp: new Date()
+  });
+});
 // Route Imports
 const vendorRoutes = require('./routes/vendorRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -14,6 +22,8 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const chatRoutes = require('./routes/chatRoutes'); 
 const ratingRoutes = require('./routes/ratingRoutes');
+
+
 
 dotenv.config();
 const app = express();
