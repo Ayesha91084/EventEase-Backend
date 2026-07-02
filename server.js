@@ -6,14 +6,6 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const { Pool } = require('pg'); // SQL Driver Imported
 
-// Keep-Alive General health API to prevent Render from sleeping
-app.get('/api/health-check', (req, res) => {
-  res.status(200).json({
-    status: "success",
-    message: "Server is Active and Awake!",
-    timestamp: new Date()
-  });
-});
 // Route Imports
 const vendorRoutes = require('./routes/vendorRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -23,10 +15,8 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const chatRoutes = require('./routes/chatRoutes'); 
 const ratingRoutes = require('./routes/ratingRoutes');
 
-
-
 dotenv.config();
-const app = express();
+const app = express(); // 👈 'app' yahan ban gaya hai properly!
 
 const allowedOrigins = [
     'https://event-ease-frontend-djx3.vercel.app',
@@ -51,6 +41,17 @@ app.use(cors({
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+// ===================================================================
+// 🛠️ KEEP-ALIVE HEALTH API (Ab bilkul sahi jagah par hai!)
+// ===================================================================
+app.get('/api/health-check', (req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "Server is Active and Awake!",
+    timestamp: new Date()
+  });
+});
 
 const server = http.createServer(app);
 const io = new Server(server, {
