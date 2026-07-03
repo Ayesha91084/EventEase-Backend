@@ -16,15 +16,8 @@ const chatRoutes = require('./routes/chatRoutes');
 const ratingRoutes = require('./routes/ratingRoutes');
 
 dotenv.config();
-const app = express(); // 👈 'app' yahan ban gaya hai properly!
+const app = express(); // 👈 'app' properly created
 
-const allowedOrigins = [
-    'https://event-ease-frontend-djx3.vercel.app',
-    'https://event-ease-frontend-kaqn.vercel.app',
-    'https://event-ease-frontend-vr25.vercel.app',
-    'http://localhost:3000',
-    'http://localhost:5173'
-];
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger-output.json');
 
@@ -32,22 +25,18 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(express.json());
 
+// ===================================================================
+// 🔓 CORS CONFIGURATION - ALLOW ALL ORIGINS (BINA KISI BLOCK KE)
+// ===================================================================
 app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-            return callback(new Error(msg), false);
-        }
-        return callback(null, true);
-    },
+    origin: true, // Har tarah ki origin/website ko allow karega
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 // ===================================================================
-// 🛠️ KEEP-ALIVE HEALTH API (Ab bilkul sahi jagah par hai!)
+// 🛠️ KEEP-ALIVE HEALTH API
 // ===================================================================
 app.get('/api/health-check', (req, res) => {
   res.status(200).json({
@@ -59,7 +48,11 @@ app.get('/api/health-check', (req, res) => {
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: allowedOrigins, methods: ["GET", "POST"], credentials: true }
+    cors: { 
+        origin: true, // Socket connections ko bhi fully open kar diya
+        methods: ["GET", "POST"], 
+        credentials: true 
+    }
 });
 
 app.use('/api/bookings', bookingRoutes);

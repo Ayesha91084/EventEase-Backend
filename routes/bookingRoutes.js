@@ -14,6 +14,22 @@ const verifyToken = authMiddleware.verifyToken || authMiddleware.protect || auth
 // ==========================================
 
 // #swagger.tags = ['Bookings']
-router.post('/book', verifyToken, createBooking);
+router.post('/book', verifyToken, (req, res, next) => {
+    /* #swagger.requestBody = {
+            required: true,
+            content: {
+                "application/json": {
+                    schema: {
+                        $vendorId: "65f8a123abc456def7890123",
+                        $eventDate: "2026-07-15",
+                        $totalPrice: 25000,
+                        status: "pending"
+                    }
+                }
+            }
+        } 
+    */
+    createBooking(req, res, next);
+});
 
 module.exports = router;

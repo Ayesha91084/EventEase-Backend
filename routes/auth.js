@@ -4,14 +4,25 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// ==========================================
+// 🛠️ SIGNUP API
+// ==========================================
 // #swagger.tags = ['Authentication']
-router.post('/signup', signupController);
-
-// #swagger.tags = ['Authentication']
-router.post('/login', loginController);
-
-// SIGNUP API
 router.post('/signup', async (req, res) => {
+    /* #swagger.requestBody = {
+            required: true,
+            content: {
+                "application/json": {
+                    schema: {
+                        $name: "Ayesha Bibi",
+                        $email: "ayesha@example.com",
+                        $password: "password123",
+                        role: "client"
+                    }
+                }
+            }
+        } 
+    */
     try {
         const { name, email, password, role } = req.body;
 
@@ -41,9 +52,23 @@ router.post('/signup', async (req, res) => {
     }
 });
 
-
-// LOGIN API
+// ==========================================
+// 🛠️ LOGIN API
+// ==========================================
+// #swagger.tags = ['Authentication']
 router.post('/login', async (req, res) => {
+    /* #swagger.requestBody = {
+            required: true,
+            content: {
+                "application/json": {
+                    schema: {
+                        $email: "ayesha@example.com",
+                        $password: "password123"
+                    }
+                }
+            }
+        } 
+    */
     try {
         const { email, password } = req.body;
 
@@ -68,4 +93,5 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: "Server Error", error: err.message });
     }
 });
+
 module.exports = router;
