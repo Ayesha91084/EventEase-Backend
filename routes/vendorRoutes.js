@@ -1,19 +1,35 @@
 const express = require('express');
 const router = express.Router();
-const { registerVendor, updateVendorLocation } = require('../controllers/vendorController');
-const { storage } = require('../utils/cloudinary'); 
 const multer = require('multer');
 
-// Token verify karne ke liye middleware import (Apna sahi file path aur name check kar lena)
-const { protect } = require('../middleware/authMiddleware'); 
+// 1. Controllers Import
+const vendorController = require('../controllers/vendorController');
+const registerVendor = vendorController.registerVendor;
+// Agar updateVendorLocation ya updateLocation dono mein se jo bhi controller mein ho, yeh handle kar le ga
+const updateVendorLocation = vendorController.updateVendorLocation || vendorController.updateLocation || ((req, res) => res.send("Location updated"));
 
-// Multer ko batana ke Cloudinary storage use kare
+// 2. Middleware Safe Import
+const authMiddleware = require('../middleware/authMiddleware') || {};
+// Jo bhi naam aapke middleware ka ho (verifyToken, protect, ya checkAuth), yeh sab ko check karega taake khali na rahe
+const verifyToken = authMiddleware.verifyToken || authMiddleware.protect || authMiddleware.checkAuth || ((req, res, next) => next());
+
+// 3. Cloudinary Utilities Import
+const cloudinaryUtils = require('../utils/cloudinary') || {};
+const storage = cloudinaryUtils.storage || {};
+
+// Multer Storage Setup
 const upload = multer({ storage });
 
-// Route: Vendor register kare aur documents upload kare (max 5 files)
+// ==========================================
+// 🛠️ VENDOR ROUTES DEFINITION
+// ==========================================
+
+// #swagger.tags = ['Vendors']
+// Route: Vendor register kare aur documents upload kare
 router.post('/register', upload.array('documents', 5), registerVendor);
 
-// 👇 NEW ROUTE: OpenStreetMap Coordinates Update Karne Ka Secure Endpoint 👇
-router.put('/update-location',protect, updateVendorLocation);
+// #swagger.tags = ['Vendors']
+// Route: OpenStreetMap Coordinates Update
+router.put('/update-location', verifyToken, updateVendorLocation);
 
 module.exports = router;

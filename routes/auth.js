@@ -4,6 +4,12 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// #swagger.tags = ['Authentication']
+router.post('/signup', signupController);
+
+// #swagger.tags = ['Authentication']
+router.post('/login', loginController);
+
 // SIGNUP API
 router.post('/signup', async (req, res) => {
     try {
