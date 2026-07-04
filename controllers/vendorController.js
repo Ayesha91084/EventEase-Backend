@@ -95,26 +95,22 @@ const updateVendorLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 3. NEW: SEARCH VENDORS BY LOCATION CONTROLLER (Asma's Fix)
+// 🚀 3. SEARCH VENDORS BY LOCATION CONTROLLER (Asma's Fix)
 // ===================================================================
 const searchVendorsByLocation = async (req, res) => {
     try {
-        // Frontend query params se city, lat, ya lng uthayega
         const { city, latitude, longitude } = req.query;
         let query = {};
 
-        // Agar city di hui hai to case-insensitive search karein (e.g. "mandi bahauddin" ya "Mandi Bahauddin")
         if (city) {
             query["location.city"] = { $regex: city, $options: "i" };
         }
 
-        // Agar exact coordinates se search karna ho
         if (latitude && longitude) {
             query["location.latitude"] = Number(latitude);
             query["location.longitude"] = Number(longitude);
         }
 
-        // Database se matching vendors nikalna
         const vendors = await Vendor.find(query);
 
         return res.status(200).json({
@@ -129,5 +125,4 @@ const searchVendorsByLocation = async (req, res) => {
     }
 };
 
-// Teeno functions ko export kar diya
 module.exports = { registerVendor, updateVendorLocation, searchVendorsByLocation };

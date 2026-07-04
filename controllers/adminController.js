@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Booking = require('../models/Booking');
 const Service = require('../models/Service');
+const Vendor = require('../models/VendorProfile'); // Added for profile query
 
 // Get all users
 const getAllUsers = async (req, res) => {
@@ -55,10 +56,55 @@ const getDashboardSummary = async (req, res) => {
     }
 };
 
+// ===================================================================
+// 🚀 NEW: GET ALL PENDING VENDORS (For Admin Verification Panel)
+// ===================================================================
+const getPendingVendors = async (req, res) => {
+    try {
+        // Main user credentials table se status check query lagayi
+        const pendingVendors = await User.find({ role: 'vendor', isVerified: false }).select('-password');
+        res.status(200).json({ success: true, data: pendingVendors });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// ===================================================================
+// 🚀 NEW: APPROVE OR REJECT VENDOR PROFILES (Admin Action Control)
+// ===================================================================
+const verifyVendor = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body; // Expecting 'approved' or 'rejected'
+
+        const isApproved = status === 'approved';
+
+        const updatedUser = await User.findByIdAndUpdate(
+            id,
+            { isVerified: isApproved },
+            { new: true }
+        ).select('-password');
+
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: "User profile context not found." });
+        }
+
+        res.status(200).json({ 
+            success: true, 
+            message: `Vendor verified flag toggled to ${status}`, 
+            data: updatedUser 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
 // Sab ko ek sath single export me rakhein
 module.exports = { 
     getAllUsers, 
     deleteUser, 
     getDashboardStats, 
-    getDashboardSummary 
+    getDashboardSummary,
+    getPendingVendors,
+    verifyVendor
 };
