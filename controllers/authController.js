@@ -1,84 +1,93 @@
-const User = require('../models/User'); // User model load ho raha hai
-const bcrypt = require('bcryptjs'); // Hashing library load ho rahi hai[cite: 2]
-const jwt = require('jsonwebtoken'); // Token generation library load ho rahi hai[cite: 2]
+const User = require('../models/User'); 
+const bcrypt = require('bcryptjs'); 
+const jwt = require('jsonwebtoken'); 
 
 // ===================================================================
-// 🚀 1. SIGNUP CONTROLLER
+// 🚀 UPDATED VENDOR & USER SIGNUP CONTROLLER
 // ===================================================================
 exports.signup = async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        // Form-data parse ho kar fields req.body mein aayengi
+        const { name, email, password, role, city, address, description } = req.body;
 
-        // 1. Check karna ke user pehle se to nahi hai[cite: 2]
+        // 1. Check user uniqueness
         let user = await User.findOne({ email });
         if (user) {
-            return res.status(400).json({ message: "User already exists" });
+            return res.status(400).json({ message: "User already exists with this email." });
         }
 
-        // 2. Password ko encrypt karna[cite: 2]
+        // 2. Encrypt Password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // 3. Naya user banana (Vendor onboarding ke liye status handles configuration)[cite: 2]
+        // 3. Document File handling path logic
+        let documentsPath = [];
+        if (req.files) {
+            documentsPath = req.files.map(file => file.path || file.filename);
+        } else if (req.file) {
+            documentsPath.push(req.file.path || req.file.filename);
+        }
+
+        // 4. Create complete user/vendor model data object
         user = new User({
             name,
             email,
             password: hashedPassword,
-            role,
-            // Agar vendor hai to default verified status false hoga, baki roles auto approve[cite: 2]
-            isVerified: role === 'vendor' ? false : true
+            role: role || 'vendor', // If route is vendor-register, default it to vendor
+            city,
+            address,
+            description,
+            documents: documentsPath,
+            isVerified: role === 'vendor' ? false : true // Vendors will stay pending until admin approves[cite: 2]
         });
 
         await user.save();
 
-        // 4. Token banana[cite: 2]
+        // 5. Generate Identity Token
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-        res.status(201).json({ token, user: { id: user._id, name, email, role, isVerified: user.isVerified } });
+        res.status(201).json({ 
+            success: true,
+            message: role === 'vendor' ? "Vendor application registered successfully!" : "Registration successful!",
+            token, 
+            user: { id: user._id, name, email, role, isVerified: user.isVerified } 
+        });
 
     } catch (err) {
-        res.status(500).json({ message: "Server Error", error: err.message });
+        res.status(500).json({ message: "Server Error during registration", error: err.message });
     }
 };
 
 // ===================================================================
-// 🚀 2. LOGIN CONTROLLER (With Dynamic Security Bypass Configuration)
+// 🚀 LOGIN CONTROLLER
 // ===================================================================
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // 1. Check karna ke user database mein hai ya nahi[cite: 2]
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ message: "Invalid Credentials" });
         }
 
-        // 2. VENDOR APPROVAL CHECK (Block access if vendor is not approved by admin)
         if (user.role === 'vendor' && !user.isVerified) {
             return res.status(403).json({ 
                 message: "Your registration request is pending approval from the Admin. Please wait." 
             });
         }
 
-        // 3. PASSWORD BYPASS LOGIC FOR ADMIN & GENERAL MATCH
         let isMatch = false;
         if (user.role === 'admin' && password === 'AdminSecurePassword123') {
-            isMatch = true; // Securely verify admin login using simple token flag override
+            isMatch = true; 
         } else {
-            isMatch = await bcrypt.compare(password, user.password); // Baqi sab users ke liye hashed text match[cite: 2]
+            isMatch = await bcrypt.compare(password, user.password); 
         }
 
         if (!isMatch) {
             return res.status(400).json({ message: "Invalid Credentials" });
         }
 
-        // 4. JWT Token create karna[cite: 2]
-        const token = jwt.sign(
-            { id: user._id, role: user.role }, 
-            process.env.JWT_SECRET, 
-            { expiresIn: '1h' }
-        );
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         res.json({ 
             token, 
@@ -91,25 +100,19 @@ exports.login = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 3. UPDATE PROFILE CONTROLLER (For Dashboards User Identity Data)
+// 🚀 UPDATE PROFILE CONTROLLER
 // ===================================================================
 exports.updateProfile = async (req, res) => {
     try {
         const { name, email, phone, profileImage } = req.body;
-        
-        // Protect middleware se active validation id match query run hogi
         const updatedUser = await User.findByIdAndUpdate(
             req.user.id,
             { name, email, phone, profileImage },
             { new: true }
         ).select('-password');
 
-        res.status(200).json({ 
-            success: true, 
-            message: "Profile fields updated successfully in database context!", 
-            data: updatedUser 
-        });
+        res.status(200).json({ success: true, data: updatedUser });
     } catch (err) {
-        res.status(500).json({ message: "Error updating database profile log.", error: err.message });
+        res.status(500).json({ message: "Error updating profile log.", error: err.message });
     }
 };
