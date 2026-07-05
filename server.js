@@ -110,7 +110,8 @@ const initializePostgres = async () => {
         const neonPool = new Pool({
             connectionString: process.env.DATABASE_URL1,
             ssl: {
-                rejectUnauthorized: false // 🚀 Yeh local system par security check ko bypass karega
+                rejectUnauthorized: false, // Local security layer bypass karne ke liye
+                sslmode: 'verify-full'     // Warning error ko permanently shut down karne ke liye
             }
         });
         try {
