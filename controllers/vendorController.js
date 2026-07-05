@@ -5,15 +5,17 @@ const User = require('../models/User');
 const registerVendor = async (req, res) => {
     try {
         const { userId, user, businessName, businessType, location, description, documents } = req.body;
-        const targetUserId = userId || user;
+        
+        // Frontend handles alternate keys, extracting safely
+        const targetUserId = userId || user || req.body.user;
 
         if (!targetUserId) {
-            return res.status(400).json({ message: "User ID (userId) dena lazmi hai!" });
+            return res.status(400).json({ message: "User ID dena lazmi hai!" });
         }
 
         const userCheck = await User.findById(targetUserId);
         if (!userCheck) {
-            return res.status(404).json({ message: "User nahi mila!" });
+            return res.status(404).json({ message: "User nahi mila database mein!" });
         }
 
         let documentUrls = [];
@@ -23,17 +25,30 @@ const registerVendor = async (req, res) => {
             documentUrls = documents || [];
         }
 
-        let finalLocation = {
-            city: req.body["location[city]"] || (location && location.city) || "Unknown",
-            address: req.body["location[address]"] || (location && location.address) || "Unknown"
-        };
+        // Safe extraction layer for incoming body stringified location structures
+        let finalLocation = { city: "Unknown", address: "Unknown" };
+        
+        if (req.body.city) finalLocation.city = req.body.city;
+        if (req.body.address) finalLocation.address = req.body.address;
+
+        if (location) {
+            try {
+                const parsed = typeof location === 'string' ? JSON.parse(location) : location;
+                if (parsed.city) finalLocation.city = parsed.city;
+                if (parsed.address) finalLocation.address = parsed.address;
+            } catch (e) {
+                // Raw key checks if fallback parser encounters standard JSON strings
+                finalLocation.city = req.body["location[city]"] || "Unknown";
+                finalLocation.address = req.body["location[address]"] || "Unknown";
+            }
+        }
 
         const newVendor = new Vendor({
             userId: targetUserId,
-            businessName,
-            category: businessType, 
+            businessName: businessName || "Event Vendor",
+            category: businessType || "Decorator", 
             location: finalLocation,
-            description,
+            description: description || "",
             cnicImage: documentUrls[0] || ""
         });
 
@@ -42,14 +57,14 @@ const registerVendor = async (req, res) => {
         userCheck.role = 'vendor';
         await userCheck.save();
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Vendor registered successfully!",
             vendor: newVendor
         });
 
     } catch (error) {
-        res.status(500).json({ message: "Server Error", error: error.message });
+        return res.status(500).json({ message: "Server Error inside Vendor Controller", error: error.message });
     }
 };
 
@@ -83,20 +98,18 @@ const updateVendorLocation = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: "OpenStreetMap coordinates updated successfully!",
             data: updatedProfile.location
         });
 
     } catch (error) {
-        res.status(500).json({ success: false, message: "Server Error", error: error.message });
+        return res.status(500).json({ success: false, message: "Server Error", error: error.message });
     }
 };
 
-// ===================================================================
-// 🚀 3. SEARCH VENDORS BY LOCATION CONTROLLER (Asma's Fix)
-// ===================================================================
+// 3. SEARCH VENDORS BY LOCATION CONTROLLER
 const searchVendorsByLocation = async (req, res) => {
     try {
         const { city, latitude, longitude } = req.query;
@@ -120,8 +133,7 @@ const searchVendorsByLocation = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Search Vendor Error:", error);
-        res.status(500).json({ success: false, message: "Server Error", error: error.message });
+        return res.status(500).json({ success: false, message: "Server Error", error: error.message });
     }
 };
 
