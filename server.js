@@ -65,7 +65,7 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/ratings', ratingRoutes);
 
 app.get("/", (req, res) => {
-    res.status(200).send("EventEase Dual Database (MongoDB + PostgreSQL) is running live!");
+    res.status(200).send("EventEase Multi-Database System (MongoDB + Render SQL + Neon SQL) is running live!");
 });
 
 // Socket.io Connection
@@ -74,24 +74,63 @@ io.on('connection', (socket) => {
     socket.on('send_message', (data) => socket.to(data.room).emit('receive_message', data));
 });
 
-// ==========================================
-// 🛠️ DUAL DATABASE CONFIGURATION (SATH SATH)
-// ==========================================
+// ===================================================================
+// 🛠️ MULTI-DATABASE PIPELINE (MONGO DB + DUAL POSTGRES FALLBACK)
+// ===================================================================
 
-// 1. Try Connecting MongoDB (Safe Mode)
+// 1️⃣ MongoDB Atlas Connection (Safe Mode)
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("✅ MongoDB Connected Successfully..."))
-    .catch(err => console.log("⚠️ MongoDB Network Blocked, but Server is keeping alive! Error:", err.message));
+    .then(() => console.log("🟢 [DATABASE 1] -> MongoDB Connected Successfully..."))
+    .catch(err => console.log("⚠️ [DATABASE 1] -> MongoDB Network Blocked, but Server is keeping alive! Error:", err.message));
 
-// 2. Try Connecting PostgreSQL
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
+// Global pool variable taake routes isi execution context ko use karein
+let pool;
 
-pool.connect()
-    .then(() => console.log("✅ PostgreSQL Connected Successfully for EventEase!"))
-    .catch(err => console.log("❌ PostgreSQL Connection Error:", err.message));
+// 2️⃣ Dynamic Dual PostgreSQL Pipeline (Render vs Neon Fallback)
+const initializePostgres = async () => {
+    // A. Pehle Render Database (`DATABASE_URL`) try karein
+    if (process.env.DATABASE_URL) {
+        const renderPool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: { rejectUnauthorized: false }
+        });
+
+        try {
+            await renderPool.query('SELECT NOW()');
+            pool = renderPool;
+            console.log("🟢 [DATABASE 2] -> Render PostgreSQL Deployed DB Connected!");
+            return; // Agar connect ho gaya to yahi ruk jaye
+        } catch (err) {
+            console.log("🟡 [DATABASE 2] -> Render PostgreSQL Failed/Blocked. Trying Neon Cloud...");
+        }
+    }
+
+    // B. Agar Render fail ho, toh Neon Database (`DATABASE_URL1`) connect karein
+   if (process.env.DATABASE_URL1) {
+        const neonPool = new Pool({
+            connectionString: process.env.DATABASE_URL1,
+            ssl: {
+                rejectUnauthorized: false // 🚀 Yeh local system par security check ko bypass karega
+            }
+        });
+        try {
+            await neonPool.query('SELECT NOW()');
+            pool = neonPool;
+            console.log("🟢 [DATABASE 3] -> Neon.tech PostgreSQL (Lifetime Free) Connected Successfully!");
+            return;
+        } catch (err) {
+            console.log("🔴 [DATABASE 3] -> Neon Cloud PostgreSQL Connection also Failed.");
+        }
+    }
+
+    console.log("🚨 [CRITICAL ALERT] -> No SQL Database endpoints are available right now!");
+};
+
+// Database pipeline execute karein
+initializePostgres();
+
+// Pool export module level behavior maintain karne ke liye (if required by routes)
+module.exports = { pool };
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Live Server started on port ${PORT}`));
