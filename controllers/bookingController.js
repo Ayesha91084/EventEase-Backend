@@ -7,7 +7,7 @@ const createBooking = async (req, res) => {
     try {
         console.log("Postman se aya hua data:", req.body);
 
-        const { serviceId, vendorId, eventDate, totalAmount } = req.body;
+        const { vendorId, eventDate, totalAmount, packageDetails } = req.body;
         
         // Logged-in user ki ID access
         const customerId = req.user ? req.user.id : null; 
@@ -17,11 +17,11 @@ const createBooking = async (req, res) => {
         }
 
         // Validation check
-        if (!serviceId || !vendorId || !eventDate || !totalAmount) {
-            return res.status(400).json({
-                success: false,
-                message: "Please provide all required fields.",
-                receivedFields: { serviceId, vendorId, eventDate, totalAmount }
+        if (!vendorId || !eventDate || !totalAmount || !packageDetails) {
+        return res.status(400).json({
+        success: false,
+        message: "Please provide all required fields.",
+        receivedFields: { vendorId, eventDate, totalAmount, packageDetails }
             });
         }
 
@@ -44,7 +44,7 @@ const createBooking = async (req, res) => {
         // 🔒 NEW: OVERLAPPING BOOKING PROTECTION (Documentation Flow Page 106)
         // ===================================================================
         const existingBooking = await Booking.findOne({
-            vendor: vendorId,
+            vendorId: vendorId,
             eventDate: eventDate,
             status: { $in: ['pending', 'accepted'] } 
         });
@@ -60,8 +60,8 @@ const createBooking = async (req, res) => {
         // Naya booking record create karein
         const newBooking = new Booking({
             customer: customerId,
-            vendor: vendorId,
-            service: serviceId,
+            vendorId: vendorId,
+            packageDetails: packageDetails,
             eventDate,
             totalAmount,
             status: 'pending',
@@ -88,7 +88,7 @@ const createBooking = async (req, res) => {
 const getVendorBookings = async (req, res) => {
     try {
         const { vendorId } = req.params;
-        const bookings = await Booking.find({ vendor: vendorId }).populate('customer', 'name email').sort({ createdAt: -1 });
+        const bookings = await Booking.find({ vendorId: vendorId }).populate('customer', 'name email').sort({ createdAt: -1 });
         
         res.status(200).json({
             success: true,

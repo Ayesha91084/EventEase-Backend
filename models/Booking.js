@@ -3,7 +3,13 @@ const mongoose = require('mongoose');
 const bookingSchema = new mongoose.Schema({
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', required: true },
+    packageDetails: {
+        packageName: { type: String, required: true },
+        basePrice: { type: Number, required: true },
+        extras: { type: Array, default: [] },
+        perHead: { type: Boolean, default: false },
+        guestCount: { type: Number, default: 1 },
+    },
     eventDate: { type: Date, required: true },
     status: { 
         type: String, 
@@ -17,10 +23,8 @@ const bookingSchema = new mongoose.Schema({
         default: 'pending' 
     }
 }, { timestamps: true });
-bookingSchema.index({ customerId: 1 }); // Customer apni history dekh sakay[cite: 7]
-bookingSchema.index({ vendorId: 1 }); // Vendor apne orders dekh sakay[cite: 7]
 
-
-
+bookingSchema.index({ customer: 1 });
+bookingSchema.index({ vendorId: 1 });
 
 module.exports = mongoose.model('Booking', bookingSchema);
