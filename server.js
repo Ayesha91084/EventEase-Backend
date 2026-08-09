@@ -57,20 +57,29 @@ io.on('connection', (socket) => {
     socket.on('send_message', (data) => socket.to(data.room).emit('receive_message', data));
 });
 
-// Clean MongoDB Connection Pipeline with URL Logger
+// Detailed MongoDB Connection Pipeline with Full Error Output
 const mongoURI = process.env.MONGO_URI;
 const shortURI = mongoURI ? mongoURI.split('@')[1] || "Configured Link" : "No URI Found";
 
-mongoose.connect(mongoURI)
-    .then(() => {
+const connectDB = async () => {
+    try {
+        await mongoose.connect(mongoURI, {
+            serverSelectionTimeoutMS: 5000, // 5 seconds ke andar fail hone par error dikhayega
+        });
         console.log("------------------------------------------------");
         console.log("DATABASE: MongoDB Connected Successfully!");
         console.log(`CLUSTER: ${shortURI}`);
         console.log("------------------------------------------------");
-    })
-    .catch(err => {
-        console.log("DATABASE: MongoDB Connection Pending/Blocked.");
-    });
+    } catch (err) {
+        console.log("-------------------- DB ERROR --------------------");
+        console.error("ERROR NAME:", err.name);
+        console.error("ERROR MESSAGE:", err.message);
+        console.error("FULL ERROR DETAILS:", err);
+        console.log("--------------------------------------------------");
+    }
+};
+
+connectDB();
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`SERVER: Started on port ${PORT}`));
