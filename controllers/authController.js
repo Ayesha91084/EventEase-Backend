@@ -1,14 +1,25 @@
 const User = require('../models/User'); 
 const bcrypt = require('bcryptjs'); 
 const jwt = require('jsonwebtoken'); 
+const nodemailer = require('nodemailer');
+
+// 📧 Transporter Setup (Mailtrap / Dynamic `.env` Read)
+const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || "sandbox.smtp.mailtrap.io",
+    port: process.env.EMAIL_PORT || 2525,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
 // ===================================================================
-// 🚀 UPDATED VENDOR & USER SIGNUP CONTROLLER
+// 🚀 SIGNUP CONTROLLER (USER / VENDOR REGISTRATION WITH OTP)
 // ===================================================================
 exports.signup = async (req, res) => {
     try {
         // Form-data parse ho kar fields req.body mein aayengi
-        const { name, email, password, role, city, address, description } = req.body;
+        const { name, email, password, role, city, address, description, phone } = req.body;
 
         // 1. Check user uniqueness
         let user = await User.findOne({ email });
@@ -28,33 +39,99 @@ exports.signup = async (req, res) => {
             documentsPath.push(req.file.path || req.file.filename);
         }
 
-        // 4. Create complete user/vendor model data object
+        // 4. Generate 6-digit OTP code & 10 Minutes Expiry
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); 
+
+        // 5. Create complete user/vendor model data object with OTP & Verification Status
         user = new User({
             name,
             email,
             password: hashedPassword,
-            role: role || 'vendor', // If route is vendor-register, default it to vendor
+            role: role || 'customer',
+            phone: phone || '',
             city,
             address,
             description,
             documents: documentsPath,
-            isVerified: role === 'vendor' ? false : true // Vendors will stay pending until admin approves[cite: 2]
+            isVerified: false, // OTP verify hone tak unverified rahega
+            otp,
+            otpExpires
         });
 
         await user.save();
 
-        // 5. Generate Identity Token
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        // 6. Send OTP Email via Mailtrap Sandbox
+        const mailOptions = {
+            from: '"EventEase System" <auth@eventease.com>',
+            to: email,
+            subject: 'EventEase - Account Verification OTP',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #4F46E5; border-radius: 8px; background-color: #f9fafb;">
+                    <h2 style="color: #4F46E5; margin-bottom: 8px;">Welcome to EventEase!</h2>
+                    <p style="font-size: 15px; color: #374151;">Dear <strong>${name}</strong>,</p>
+                    <p style="font-size: 14px; color: #4b5563;">Thank you for registering. Please use the following OTP code to verify your email address:</p>
+                    <div style="background: #eef2ff; border: 1px dashed #6366f1; padding: 12px 24px; display: inline-block; font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #4338ca; border-radius: 8px; margin: 15px 0;">
+                        ${otp}
+                    </div>
+                    <p style="font-size: 13px; color: #6b7280;">This code is valid for 10 minutes.</p>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
 
         res.status(201).json({ 
             success: true,
-            message: role === 'vendor' ? "Vendor application registered successfully!" : "Registration successful!",
-            token, 
-            user: { id: user._id, name, email, role, isVerified: user.isVerified } 
+            message: "OTP sent to your email. Please verify to activate account.",
+            email: user.email
         });
 
     } catch (err) {
+        console.error("Signup Error:", err);
         res.status(500).json({ message: "Server Error during registration", error: err.message });
+    }
+};
+
+// ===================================================================
+// 🚀 OTP VERIFICATION CONTROLLER
+// ===================================================================
+exports.verifyOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: "User not found." });
+        }
+
+        if (user.otp !== otp || new Date() > user.otpExpires) {
+            return res.status(400).json({ message: "Invalid or expired OTP code." });
+        }
+
+        // Email verify ho chuki hai
+        user.isVerified = true;
+        user.otp = null;
+        user.otpExpires = null;
+        await user.save();
+
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'secretKey', { expiresIn: '1h' });
+
+        res.status(200).json({
+            success: true,
+            message: "Email verified successfully!",
+            token,
+            user: { 
+                id: user._id, 
+                name: user.name, 
+                email: user.email, 
+                role: user.role, 
+                isVerified: user.isVerified 
+            }
+        });
+
+    } catch (err) {
+        res.status(500).json({ message: "Verification Error", error: err.message });
     }
 };
 
@@ -70,12 +147,14 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: "Invalid Credentials" });
         }
 
-        if (user.role === 'vendor' && !user.isVerified) {
+        // 1. Email OTP verification check
+        if (!user.isVerified && user.role !== 'admin') {
             return res.status(403).json({ 
-                message: "Your registration request is pending approval from the Admin. Please wait." 
+                message: "Email is not verified. Please verify your OTP first." 
             });
         }
 
+        // 2. Admin Check & Password Matching Logic
         let isMatch = false;
         if (user.role === 'admin' && password === 'AdminSecurePassword123') {
             isMatch = true; 
@@ -87,7 +166,7 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: "Invalid Credentials" });
         }
 
-        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'secretKey', { expiresIn: '1h' });
 
         res.json({ 
             token, 

@@ -29,11 +29,18 @@ const userSchema = new mongoose.Schema({
     isVerified: {
         type: Boolean,
         default: false
+    },
+    // 👇 OTP VERIFICATION FIELDS
+    otp: {
+        type: String,
+        default: null
+    },
+    otpExpires: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true });
 
-
-// User schema ke andar fields define karne ke baad ye add karei  // Faster login/signup check
-userSchema.index({ role: 1 }); // Faster filtering for Admin dashboard
+userSchema.index({ role: 1 });
 
 module.exports = mongoose.model('User', userSchema);
