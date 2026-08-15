@@ -250,41 +250,27 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-// ===================================================================
-// 🚀 RESET PASSWORD CONTROLLER (VERIFY OTP & SAVE NEW PASSWORD)
-// ===================================================================
+// POST /api/auth/reset-password
 exports.resetPassword = async (req, res) => {
-    try {
-        const { email, otp, newPassword } = req.body;
+  try {
+    const { email, newPassword } = req.body;
 
-        if (!email || !otp || !newPassword) {
-            return res.status(400).json({ message: "Please provide email, OTP, and new password." });
-        }
-
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: "User not found." });
-        }
-
-        // Verify OTP code and expiry check
-        if (user.otp !== otp || new Date() > user.otpExpires) {
-            return res.status(400).json({ message: "Invalid or expired OTP code." });
-        }
-
-        // Hash new password & save
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(newPassword, salt);
-        user.otp = null;
-        user.otpExpires = null;
-        await user.save();
-
-        res.status(200).json({
-            success: true,
-            message: "Password reset successfully! You can now log in with your new password."
-        });
-
-    } catch (err) {
-        console.error("Reset Password Error:", err);
-        res.status(500).json({ message: "Server error resetting password", error: err.message });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    // Password hash karein aur update karein
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    
+    // Clear OTP fields
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successful!" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error during password reset" });
+  }
 };
