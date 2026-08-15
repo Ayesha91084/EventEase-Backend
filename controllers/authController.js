@@ -271,7 +271,9 @@ exports.resetPassword = async (req, res) => {
 };
 //const { OAuth2Client } = require('google-auth-library');
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
-const client = new OAuth2Client(CLIENT_ID);
+
+// Variable name changed to 'googleOAuthClient' to avoid duplicate identifier crash
+const googleOAuthClient = new OAuth2Client(CLIENT_ID);
 
 exports.googleAuth = async (req, res) => {
   try {
@@ -281,11 +283,10 @@ exports.googleAuth = async (req, res) => {
       return res.status(400).json({ success: false, message: "Token missing" });
     }
 
-    // Google Verification with fallback decode
     let email, name, googleId;
 
     try {
-      const ticket = await client.verifyIdToken({
+      const ticket = await googleOAuthClient.verifyIdToken({
         idToken: token,
         audience: CLIENT_ID,
       });
@@ -294,7 +295,7 @@ exports.googleAuth = async (req, res) => {
       name = payload.name;
       googleId = payload.sub;
     } catch (verifyError) {
-      // Fallback: decode directly if verification library times out
+      // Fallback: direct decode if token structure allows
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const payload = JSON.parse(Buffer.from(base64, 'base64').toString());
@@ -320,7 +321,7 @@ exports.googleAuth = async (req, res) => {
       await user.save();
     }
 
-    // JWT Generation
+    // App JWT Generation
     const appToken = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET || 'secretKey',
