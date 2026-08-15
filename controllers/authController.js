@@ -272,16 +272,28 @@ exports.resetPassword = async (req, res) => {
 // ===================================================================
 // 🚀 GOOGLE AUTH CONTROLLER (FOOLPROOF DECODING METHOD)
 // ===================================================================
+// ===================================================================
+// 🚀 GOOGLE AUTH CONTROLLER (DUAL KEY SAFETY FIX)
+// ===================================================================
 exports.googleAuth = async (req, res) => {
   try {
-    const { token } = req.body;
+    // Frontend credential bhej raha ho ya token, dono capture honge
+    const googleToken = req.body.token || req.body.credential;
 
-    if (!token) {
-      return res.status(400).json({ success: false, message: "Google token is required" });
+    if (!googleToken) {
+      console.log("No token received in body:", req.body);
+      return res.status(400).json({ 
+        success: false, 
+        message: "Google token is required (Expected 'token' or 'credential')" 
+      });
     }
 
-    // Direct JWT Payload Decode (Bina Google Library Dependency ke)
-    const base64Url = token.split('.')[1];
+    // Direct JWT Payload Decode (Safe Base64)
+    const base64Url = googleToken.split('.')[1];
+    if (!base64Url) {
+      return res.status(400).json({ success: false, message: "Malformed token structure" });
+    }
+
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
       atob(base64)
@@ -294,7 +306,7 @@ exports.googleAuth = async (req, res) => {
     const { email, name, sub: googleId } = payload;
 
     if (!email) {
-      return res.status(400).json({ success: false, message: "Invalid Google payload" });
+      return res.status(400).json({ success: false, message: "Invalid Google payload details" });
     }
 
     // Database check/create logic
@@ -311,7 +323,7 @@ exports.googleAuth = async (req, res) => {
       await user.save();
     }
 
-    // App JWT Token generate karein
+    // Generate Application JWT Token
     const appToken = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET || 'secretKey',
@@ -331,7 +343,7 @@ exports.googleAuth = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Google Decoding Error:", error);
+    console.error("Google Auth Processing Error:", error);
     return res.status(400).json({ 
       success: false, 
       message: "Invalid Google Token",
