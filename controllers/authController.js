@@ -269,7 +269,7 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error during password reset" });
   }
 };
-const { OAuth2Client } = require('google-auth-library');
+//const { OAuth2Client } = require('google-auth-library');
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
 const client = new OAuth2Client(CLIENT_ID);
 
