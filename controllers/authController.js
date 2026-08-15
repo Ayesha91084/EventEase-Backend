@@ -2,6 +2,12 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs'); 
 const jwt = require('jsonwebtoken'); 
 const nodemailer = require('nodemailer');
+const { OAuth2Client } = require('google-auth-library');
+
+// Google OAuth Client Setup
+const client = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com"
+);
 
 // 📧 Transporter Setup (Mailtrap / Dynamic `.env` Read)
 const transporter = nodemailer.createTransport({
@@ -18,20 +24,16 @@ const transporter = nodemailer.createTransport({
 // ===================================================================
 exports.signup = async (req, res) => {
     try {
-        // Form-data parse ho kar fields req.body mein aayengi
         const { name, email, password, role, city, address, description, phone } = req.body;
 
-        // 1. Check user uniqueness
         let user = await User.findOne({ email });
         if (user) {
             return res.status(400).json({ message: "User already exists with this email." });
         }
 
-        // 2. Encrypt Password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // 3. Document File handling path logic
         let documentsPath = [];
         if (req.files) {
             documentsPath = req.files.map(file => file.path || file.filename);
@@ -39,11 +41,9 @@ exports.signup = async (req, res) => {
             documentsPath.push(req.file.path || req.file.filename);
         }
 
-        // 4. Generate 6-digit OTP code & 10 Minutes Expiry
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000); 
 
-        // 5. Create complete user/vendor model data object with OTP & Verification Status
         user = new User({
             name,
             email,
@@ -54,14 +54,13 @@ exports.signup = async (req, res) => {
             address,
             description,
             documents: documentsPath,
-            isVerified: false, // OTP verify hone tak unverified rahega
+            isVerified: false,
             otp,
             otpExpires
         });
 
         await user.save();
 
-        // 6. Send OTP Email via Mailtrap Sandbox
         const mailOptions = {
             from: '"EventEase System" <auth@eventease.com>',
             to: email,
@@ -109,7 +108,6 @@ exports.verifyOTP = async (req, res) => {
             return res.status(400).json({ message: "Invalid or expired OTP code." });
         }
 
-        // Email verify ho chuki hai
         user.isVerified = true;
         user.otp = null;
         user.otpExpires = null;
@@ -147,14 +145,12 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: "Invalid Credentials" });
         }
 
-        // 1. Email OTP verification check
         if (!user.isVerified && user.role !== 'admin') {
             return res.status(403).json({ 
                 message: "Email is not verified. Please verify your OTP first." 
             });
         }
 
-        // 2. Admin Check & Password Matching Logic
         let isMatch = false;
         if (user.role === 'admin' && password === 'AdminSecurePassword123') {
             isMatch = true; 
@@ -195,8 +191,9 @@ exports.updateProfile = async (req, res) => {
         res.status(500).json({ message: "Error updating profile log.", error: err.message });
     }
 };
+
 // ===================================================================
-// 🚀 FORGOT PASSWORD CONTROLLER (SEND RESET OTP VIA EMAIL)
+// 🚀 FORGOT PASSWORD CONTROLLER
 // ===================================================================
 exports.forgotPassword = async (req, res) => {
     try {
@@ -211,7 +208,6 @@ exports.forgotPassword = async (req, res) => {
             return res.status(404).json({ message: "No account found with this email address." });
         }
 
-        // Generate 6-digit OTP code & 10 Minutes Expiry
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -219,7 +215,6 @@ exports.forgotPassword = async (req, res) => {
         user.otpExpires = otpExpires;
         await user.save();
 
-        // Send OTP via Nodemailer
         const mailOptions = {
             from: '"EventEase Support" <auth@eventease.com>',
             to: email,
@@ -250,7 +245,9 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-// POST /api/auth/reset-password
+// ===================================================================
+// 🚀 RESET PASSWORD CONTROLLER
+// ===================================================================
 exports.resetPassword = async (req, res) => {
   try {
     const { email, newPassword } = req.body;
@@ -260,11 +257,9 @@ exports.resetPassword = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Password hash karein aur update karein
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
     
-    // Clear OTP fields
     user.otp = undefined;
     user.otpExpires = undefined;
     await user.save();
@@ -274,13 +269,11 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error during password reset" });
   }
 };
-const { OAuth2Client } = require('google-auth-library');
-//const jwt = require('jsonwebtoken');
-//const User = require('../models/User'); // Apka User model path
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-exports.googleLogin = async (req, res) => {
+// ===================================================================
+// 🚀 GOOGLE AUTH CONTROLLER (FIXED EXPORT NAME & ROLE)
+// ===================================================================
+const handleGoogleAuth = async (req, res) => {
   try {
     const { token } = req.body;
 
@@ -288,38 +281,37 @@ exports.googleLogin = async (req, res) => {
       return res.status(400).json({ message: "Google token is required" });
     }
 
-    // Google ID Token verify karein
+    const targetClientId = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
+
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: targetClientId,
     });
 
     const payload = ticket.getPayload();
     const { email, name, sub: googleId } = payload;
 
-    // Check karein user DB mein pehle se hai ya nahi
     let user = await User.findOne({ email });
 
     if (!user) {
-      // Agar naya user hai toh create karein (Default role: Customer)
       user = new User({
         name,
         email,
         googleId,
-        isVerified: true, // Google emails verified hoti hain
-        role: "Customer"
+        isVerified: true,
+        role: "customer"
       });
       await user.save();
     }
 
-    // Application JWT Token generate karein
     const appToken = jwt.sign(
       { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'secretKey',
       { expiresIn: "7d" }
     );
 
     res.status(200).json({
+      success: true,
       message: "Google login successful",
       token: appToken,
       user: {
@@ -331,7 +323,10 @@ exports.googleLogin = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Google Auth Error:", error);
+    console.error("Google Auth Verification Error:", error);
     res.status(400).json({ message: "Invalid Google Token" });
   }
 };
+
+exports.googleLogin = handleGoogleAuth;
+exports.googleAuth = handleGoogleAuth;
