@@ -274,3 +274,64 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error during password reset" });
   }
 };
+const { OAuth2Client } = require('google-auth-library');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User'); // Apka User model path
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+exports.googleLogin = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: "Google token is required" });
+    }
+
+    // Google ID Token verify karein
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, sub: googleId } = payload;
+
+    // Check karein user DB mein pehle se hai ya nahi
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Agar naya user hai toh create karein (Default role: Customer)
+      user = new User({
+        name,
+        email,
+        googleId,
+        isVerified: true, // Google emails verified hoti hain
+        role: "Customer"
+      });
+      await user.save();
+    }
+
+    // Application JWT Token generate karein
+    const appToken = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).json({
+      message: "Google login successful",
+      token: appToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    res.status(400).json({ message: "Invalid Google Token" });
+  }
+};

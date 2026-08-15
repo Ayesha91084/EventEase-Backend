@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const { googleLogin } = require('../controllers/authController');
+
+// Route add karein
+router.post('/google', googleLogin);
 
 // POST /api/auth/signup
 router.post('/signup', authController.signup);
