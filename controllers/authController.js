@@ -270,27 +270,28 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-// ===================================================================
-// 🚀 GOOGLE AUTH CONTROLLER (FIXED EXPORT NAME & ROLE)
-// ===================================================================
-const handleGoogleAuth = async (req, res) => {
+// Google Auth Controller (Safe Code)
+exports.googleAuth = async (req, res) => {
   try {
     const { token } = req.body;
 
     if (!token) {
-      return res.status(400).json({ message: "Google token is required" });
+      return res.status(400).json({ success: false, message: "Google token is required" });
     }
 
-    const targetClientId = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
+    const clientId = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
+    const googleClient = new OAuth2Client(clientId);
 
-    const ticket = await client.verifyIdToken({
+    // Google Token Verification
+    const ticket = await googleClient.verifyIdToken({
       idToken: token,
-      audience: targetClientId,
+      audience: clientId,
     });
 
     const payload = ticket.getPayload();
     const { email, name, sub: googleId } = payload;
 
+    // Check if user already exists
     let user = await User.findOne({ email });
 
     if (!user) {
@@ -304,13 +305,14 @@ const handleGoogleAuth = async (req, res) => {
       await user.save();
     }
 
+    // Generate JWT Token
     const appToken = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET || 'secretKey',
       { expiresIn: "7d" }
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Google login successful",
       token: appToken,
@@ -323,10 +325,14 @@ const handleGoogleAuth = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Google Auth Verification Error:", error);
-    res.status(400).json({ message: "Invalid Google Token" });
+    console.error("Google Verification Detailed Error:", error);
+    return res.status(400).json({ 
+      success: false, 
+      message: "Invalid Google Token",
+      details: error.message 
+    });
   }
 };
 
-exports.googleLogin = handleGoogleAuth;
-exports.googleAuth = handleGoogleAuth;
+// Aliases for route safety
+exports.googleLogin = exports.googleAuth;
