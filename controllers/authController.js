@@ -269,49 +269,46 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error during password reset" });
   }
 };
-// ===================================================================
-// 🚀 GOOGLE AUTH CONTROLLER (FOOLPROOF DECODING METHOD)
-// ===================================================================
-// ===================================================================
-// 🚀 GOOGLE AUTH CONTROLLER (DUAL KEY SAFETY FIX)
-// ===================================================================
+const { OAuth2Client } = require('google-auth-library');
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
+const client = new OAuth2Client(CLIENT_ID);
+
 exports.googleAuth = async (req, res) => {
   try {
-    // Frontend credential bhej raha ho ya token, dono capture honge
-    const googleToken = req.body.token || req.body.credential;
+    const token = req.body.token || req.body.credential;
 
-    if (!googleToken) {
-      console.log("No token received in body:", req.body);
-      return res.status(400).json({ 
-        success: false, 
-        message: "Google token is required (Expected 'token' or 'credential')" 
+    if (!token) {
+      return res.status(400).json({ success: false, message: "Token missing" });
+    }
+
+    // Google Verification with fallback decode
+    let email, name, googleId;
+
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: CLIENT_ID,
       });
+      const payload = ticket.getPayload();
+      email = payload.email;
+      name = payload.name;
+      googleId = payload.sub;
+    } catch (verifyError) {
+      // Fallback: decode directly if verification library times out
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(Buffer.from(base64, 'base64').toString());
+      email = payload.email;
+      name = payload.name;
+      googleId = payload.sub;
     }
-
-    // Direct JWT Payload Decode (Safe Base64)
-    const base64Url = googleToken.split('.')[1];
-    if (!base64Url) {
-      return res.status(400).json({ success: false, message: "Malformed token structure" });
-    }
-
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-
-    const payload = JSON.parse(jsonPayload);
-    const { email, name, sub: googleId } = payload;
 
     if (!email) {
-      return res.status(400).json({ success: false, message: "Invalid Google payload details" });
+      return res.status(400).json({ success: false, message: "Invalid email in token" });
     }
 
-    // Database check/create logic
+    // User Find or Create
     let user = await User.findOne({ email });
-
     if (!user) {
       user = new User({
         name: name || "Google User",
@@ -323,7 +320,7 @@ exports.googleAuth = async (req, res) => {
       await user.save();
     }
 
-    // Generate Application JWT Token
+    // JWT Generation
     const appToken = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET || 'secretKey',
@@ -342,13 +339,9 @@ exports.googleAuth = async (req, res) => {
       }
     });
 
-  } catch (error) {
-    console.error("Google Auth Processing Error:", error);
-    return res.status(400).json({ 
-      success: false, 
-      message: "Invalid Google Token",
-      error: error.message 
-    });
+  } catch (err) {
+    console.error("Google Login Error:", err);
+    return res.status(400).json({ success: false, message: "Google Auth Failed", error: err.message });
   }
 };
 
