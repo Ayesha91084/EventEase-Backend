@@ -276,7 +276,7 @@ exports.resetPassword = async (req, res) => {
 };
 const { OAuth2Client } = require('google-auth-library');
 //const jwt = require('jsonwebtoken');
-const User = require('../models/User'); // Apka User model path
+//const User = require('../models/User'); // Apka User model path
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
