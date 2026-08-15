@@ -195,3 +195,96 @@ exports.updateProfile = async (req, res) => {
         res.status(500).json({ message: "Error updating profile log.", error: err.message });
     }
 };
+// ===================================================================
+// 🚀 FORGOT PASSWORD CONTROLLER (SEND RESET OTP VIA EMAIL)
+// ===================================================================
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: "Please provide an email address." });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "No account found with this email address." });
+        }
+
+        // Generate 6-digit OTP code & 10 Minutes Expiry
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+        user.otp = otp;
+        user.otpExpires = otpExpires;
+        await user.save();
+
+        // Send OTP via Nodemailer
+        const mailOptions = {
+            from: '"EventEase Support" <auth@eventease.com>',
+            to: email,
+            subject: 'EventEase - Password Reset OTP',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #4F46E5; border-radius: 8px; background-color: #f9fafb;">
+                    <h2 style="color: #4F46E5; margin-bottom: 8px;">Reset Your Password</h2>
+                    <p style="font-size: 15px; color: #374151;">Dear <strong>${user.name}</strong>,</p>
+                    <p style="font-size: 14px; color: #4b5563;">You requested to reset your password. Use the code below to reset it:</p>
+                    <div style="background: #eef2ff; border: 1px dashed #6366f1; padding: 12px 24px; display: inline-block; font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #4338ca; border-radius: 8px; margin: 15px 0;">
+                        ${otp}
+                    </div>
+                    <p style="font-size: 13px; color: #6b7280;">This OTP is valid for 10 minutes. If you did not request this, please ignore this email.</p>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({
+            success: true,
+            message: "Password reset OTP sent to your email."
+        });
+
+    } catch (err) {
+        console.error("Forgot Password Error:", err);
+        res.status(500).json({ message: "Server error sending reset OTP", error: err.message });
+    }
+};
+
+// ===================================================================
+// 🚀 RESET PASSWORD CONTROLLER (VERIFY OTP & SAVE NEW PASSWORD)
+// ===================================================================
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ message: "Please provide email, OTP, and new password." });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Verify OTP code and expiry check
+        if (user.otp !== otp || new Date() > user.otpExpires) {
+            return res.status(400).json({ message: "Invalid or expired OTP code." });
+        }
+
+        // Hash new password & save
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        user.otp = null;
+        user.otpExpires = null;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Password reset successfully! You can now log in with your new password."
+        });
+
+    } catch (err) {
+        console.error("Reset Password Error:", err);
+        res.status(500).json({ message: "Server error resetting password", error: err.message });
+    }
+};
