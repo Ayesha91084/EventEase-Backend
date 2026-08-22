@@ -12,7 +12,13 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true
+        required: function() {
+            return !this.googleId;   // ✅ sirf tab required jab googleId na ho
+        }
+    },
+    googleId: {
+        type: String,
+        default: null              // ✅ ye naya field add karein
     },
     role: {
         type: String,
@@ -30,7 +36,6 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    // 👇 OTP VERIFICATION FIELDS
     otp: {
         type: String,
         default: null
