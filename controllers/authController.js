@@ -278,6 +278,7 @@ const googleOAuthClient = new OAuth2Client(CLIENT_ID);
 exports.googleAuth = async (req, res) => {
   try {
     const token = req.body.token || req.body.credential;
+    const selectedRole = req.body.role;
 
     if (!token) {
       return res.status(400).json({ success: false, message: "Token missing" });
@@ -316,7 +317,7 @@ exports.googleAuth = async (req, res) => {
         email: email,
         googleId: googleId,
         isVerified: true,
-        role: "customer"
+       role: selectedRole || "customer" 
       });
       await user.save();
     }
