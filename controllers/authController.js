@@ -312,15 +312,24 @@ exports.googleAuth = async (req, res) => {
     // User Find or Create
     let user = await User.findOne({ email });
     if (!user) {
-      user = new User({
-        name: name || "Google User",
-        email: email,
-        googleId: googleId,
-        isVerified: true,
-       role: selectedRole || "customer" 
-      });
-      await user.save();
-    }
+  // Agar bilkul NAYA user hai, to dropdown se select kiya hua role save karein
+  user = new User({
+    name: name || "Google User",
+    email: email,
+    googleId: googleId,
+    isVerified: true,
+    role: selectedRole || "customer" 
+  });
+  await user.save();
+} else {
+  // Agar user PEHLE SE exist karta hai aur usne role change karke Google Auth kiya hai, to Role UPDATE karein
+  if (selectedRole) {
+    user.role = selectedRole;
+    if (!user.googleId) user.googleId = googleId;
+    user.isVerified = true;
+    await user.save();
+  }
+}
 
     // App JWT Generation
     const appToken = jwt.sign(
