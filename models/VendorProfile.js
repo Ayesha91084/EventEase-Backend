@@ -14,21 +14,26 @@ const vendorProfileSchema = new mongoose.Schema({
     type: String
   },
   
-  // Is location object ko update karna hai:
+  // 🚀 NEW: Profile Picture URL (Cloudinary Link Save Karne Ke Liye)
+  profileImage: {
+    type: String,
+    default: ""
+  },
+
+  // Location details with OpenStreetMap coordinates
   location: {
     city: { type: String, required: true },
     address: { type: String, required: true },
     
-    // 👇 OPENSTREETMAP COORDINATES ADDED HERE 👇
     latitude: { 
       type: Number, 
       required: false, 
-      default: 32.5742 // Default Mandi Bahauddin ka latitude takay crash na ho
+      default: 32.5742 // Default Mandi Bahauddin latitude
     },
     longitude: { 
       type: Number, 
       required: false, 
-      default: 73.4851 // Default Mandi Bahauddin ka longitude takay crash na ho
+      default: 73.4851 // Default Mandi Bahauddin longitude
     }
   },
   
