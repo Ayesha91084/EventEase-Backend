@@ -1,25 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
 
-// 1. Controllers Import
+// 1. Multer Middleware Import (Naya Memory Storage Middleware)
+const upload = require('../middleware/multer');
+
+// 2. Controllers Import
 const vendorController = require('../controllers/vendorController') || {};
 const registerVendor = vendorController.registerVendor || ((req, res) => res.send("Registration processed"));
 const updateVendorLocation = vendorController.updateVendorLocation || vendorController.updateLocation || ((req, res) => res.send("Location updated"));
-
-// 🚀 NEW: Search controller import with safety fallback check
 const searchVendorsByLocation = vendorController.searchVendorsByLocation || ((req, res) => res.send("Search processed"));
 
-// 2. Middleware Safe Import
+// 🚀 NEW: Profile Picture Upload Controller Import
+const uploadProfilePicture = vendorController.uploadProfilePicture || ((req, res) => res.send("Profile picture upload processed"));
+
+// 3. Middleware Safe Import
 const authMiddleware = require('../middleware/authMiddleware') || {};
 const verifyToken = authMiddleware.verifyToken || authMiddleware.protect || authMiddleware.checkAuth || ((req, res, next) => next());
-
-// 3. Cloudinary Utilities Import
-const cloudinaryUtils = require('../utils/cloudinary') || {};
-const storage = cloudinaryUtils.storage || {};
-
-// Multer Storage Setup
-const upload = multer({ storage });
 
 // ==========================================
 // 🛠️ VENDOR ROUTES DEFINITION
@@ -34,13 +30,20 @@ router.post('/register', upload.array('documents', 5), registerVendor);
 router.put('/update-location', verifyToken, updateVendorLocation);
 
 // ==========================================
-// 🚀 NEW: SEARCH VENDORS BY LOCATION ROUTE (Asma's Fix)
+// 🚀 SEARCH VENDORS BY LOCATION ROUTE
 // ==========================================
 // #swagger.tags = ['Vendors']
-// Route: Location base par vendors filter/search karne ke liye (GET /api/vendors/search)
+// Route: Location base par vendors filter/search karne ke liye
 router.get('/search', (req, res, next) => {
     /* #swagger.description = 'City name ya coordinates base par vendors ko dynamically search karne ke liye endpoint' */
     searchVendorsByLocation(req, res, next);
 });
+
+// ==========================================
+// 🚀 NEW: PROFILE PICTURE UPLOAD ROUTE
+// ==========================================
+// #swagger.tags = ['Vendors']
+// Route: Profile picture update karne ke liye (PUT /api/vendors/profile/upload-image/:vendorId)
+router.put('/profile/upload-image/:vendorId', upload.single('profilePicture'), uploadProfilePicture);
 
 module.exports = router;
