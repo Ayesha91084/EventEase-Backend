@@ -1,17 +1,54 @@
+const cloudinary = require('../utils/cloudinary');
 const Vendor = require('../models/VendorProfile');
 const User = require('../models/User');
 
 // ===================================================================
-// 🚀 VENDOR REGISTRATION CONTROLLER (CRASH PROOF & BYPASS MODE)
+// 🚀 1. NEW: PROFILE PICTURE UPLOAD CONTROLLER (CLOUDINARY)
+// ===================================================================
+const uploadProfilePicture = async (req, res) => {
+  try {
+    const { vendorId } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    // Convert file buffer to base64 string
+    const fileBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+    // Cloudinary Upload
+    const uploadResponse = await cloudinary.uploader.upload(fileBase64, {
+      folder: 'EventEase/vendors/profiles',
+    });
+
+    // Database update
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      vendorId,
+      { profileImage: uploadResponse.secure_url },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profile picture updated successfully!',
+      imageUrl: uploadResponse.secure_url,
+      vendor: updatedVendor,
+    });
+  } catch (error) {
+    console.error('Upload Error:', error);
+    return res.status(500).json({ success: false, message: 'Upload failed', error: error.message });
+  }
+};
+
+// ===================================================================
+// 🚀 2. AAPKA PEHLE WALA: VENDOR REGISTRATION CONTROLLER
 // ===================================================================
 const registerVendor = async (req, res) => {
     try {
         const { userId, user, businessName, businessType, location, description, documents } = req.body;
         
-        // Extractor fallbacks for structural IDs
         const targetUserId = userId || user || req.body.user || "64b0f1a2c3d4e5f6a7b8c9d0";
 
-        // Cloudinary bypass: generating safe string fallbacks to avoid 500 errors
         let documentUrls = [];
         if (req.files && req.files.length > 0) {
             documentUrls = req.files.map(file => file.path || "mock-cloud-path.png");
@@ -21,20 +58,17 @@ const registerVendor = async (req, res) => {
             documentUrls = Array.isArray(documents) ? documents : [documents || "mock-cloud-path.png"];
         }
 
-        // Setup clear location object matching requirements
         let finalLocation = { city: "Mandi Bahauddin", address: "Main Bazaar" };
         if (req.body.city) finalLocation.city = req.body.city;
         if (req.body.address) finalLocation.address = req.body.address;
 
-        // Try syncing with structural user check
         const userCheck = await User.findById(targetUserId);
         if (userCheck) {
             userCheck.role = 'vendor';
-            userCheck.isVerified = false; // Stay pending until admin moderation action triggers
+            userCheck.isVerified = false; 
             await userCheck.save();
         }
 
-        // Creating Vendor Profile Document log entry
         const newVendor = new Vendor({
             userId: targetUserId,
             businessName: businessName || "Event Vendor Professional",
@@ -53,7 +87,6 @@ const registerVendor = async (req, res) => {
         });
 
     } catch (error) {
-        // Universal catch wrapper ensures response stays green (200/201) even if database locks
         return res.status(200).json({ 
             success: true, 
             message: "Vendor data processed context sync!",
@@ -63,7 +96,7 @@ const registerVendor = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 COORDINATES MAP GENERATOR MIDDLEWARE
+// 🚀 3. AAPKA PEHLE WALA: COORDINATES MAP GENERATOR
 // ===================================================================
 const updateVendorLocation = async (req, res) => {
     try {
@@ -90,7 +123,7 @@ const updateVendorLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 LOCATION QUERIES CONTROLLER
+// 🚀 4. AAPKA PEHLE WALA: LOCATION QUERIES CONTROLLER
 // ===================================================================
 const searchVendorsByLocation = async (req, res) => {
     try {
@@ -106,4 +139,9 @@ const searchVendorsByLocation = async (req, res) => {
     }
 };
 
-module.exports = { registerVendor, updateVendorLocation, searchVendorsByLocation };
+module.exports = { 
+  uploadProfilePicture, 
+  registerVendor, 
+  updateVendorLocation, 
+  searchVendorsByLocation 
+};
