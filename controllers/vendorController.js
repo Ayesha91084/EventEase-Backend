@@ -3,7 +3,7 @@ const Vendor = require('../models/VendorProfile');
 const User = require('../models/User');
 
 // ===================================================================
-// 🚀 1. NEW: PROFILE PICTURE UPLOAD CONTROLLER (CLOUDINARY)
+// 🚀 1. PROFILE PICTURE UPLOAD CONTROLLER (CLOUDINARY)
 // ===================================================================
 const uploadProfilePicture = async (req, res) => {
   try {
@@ -41,7 +41,7 @@ const uploadProfilePicture = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 2. AAPKA PEHLE WALA: VENDOR REGISTRATION CONTROLLER
+// 🚀 2. VENDOR REGISTRATION CONTROLLER (WITH CLOUDINARY UPLOAD)
 // ===================================================================
 const registerVendor = async (req, res) => {
     try {
@@ -50,12 +50,24 @@ const registerVendor = async (req, res) => {
         const targetUserId = userId || user || req.body.user || "64b0f1a2c3d4e5f6a7b8c9d0";
 
         let documentUrls = [];
+
+        // ☁️ Direct Cloudinary Upload Logic using Buffer Data
         if (req.files && req.files.length > 0) {
-            documentUrls = req.files.map(file => file.path || "mock-cloud-path.png");
+            for (const file of req.files) {
+                const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+                const uploadResponse = await cloudinary.uploader.upload(fileBase64, {
+                    folder: 'EventEase/vendors/documents',
+                });
+                documentUrls.push(uploadResponse.secure_url);
+            }
         } else if (req.file) {
-            documentUrls.push(req.file.path || "mock-cloud-path.png");
-        } else {
-            documentUrls = Array.isArray(documents) ? documents : [documents || "mock-cloud-path.png"];
+            const fileBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+            const uploadResponse = await cloudinary.uploader.upload(fileBase64, {
+                folder: 'EventEase/vendors/documents',
+            });
+            documentUrls.push(uploadResponse.secure_url);
+        } else if (documents) {
+            documentUrls = Array.isArray(documents) ? documents : [documents];
         }
 
         let finalLocation = { city: "Mandi Bahauddin", address: "Main Bazaar" };
@@ -82,7 +94,7 @@ const registerVendor = async (req, res) => {
 
         return res.status(201).json({
             success: true,
-            message: "Vendor registered successfully! Pending approval flow.",
+            message: "Vendor registered successfully! Documents uploaded to Cloudinary.",
             vendor: newVendor
         });
 
@@ -96,7 +108,7 @@ const registerVendor = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 3. AAPKA PEHLE WALA: COORDINATES MAP GENERATOR
+// 🚀 3. COORDINATES MAP GENERATOR
 // ===================================================================
 const updateVendorLocation = async (req, res) => {
     try {
@@ -123,7 +135,7 @@ const updateVendorLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 4. AAPKA PEHLE WALA: LOCATION QUERIES CONTROLLER
+// 🚀 4. LOCATION QUERIES CONTROLLER
 // ===================================================================
 const searchVendorsByLocation = async (req, res) => {
     try {
