@@ -6,6 +6,7 @@ const bookingController = require('../controllers/bookingController') || {};
 const createBooking = bookingController.createBooking || bookingController.book || ((req, res) => res.send("Booking processed"));
 const getVendorBookings = bookingController.getVendorBookings || ((req, res) => res.send("Vendor bookings fetched"));
 const updateBookingStatus = bookingController.updateBookingStatus || ((req, res) => res.send("Booking status updated"));
+const getCustomerBookings = bookingController.getCustomerBookings || ((req, res) => res.send("Customer bookings fetched"));
 
 // 2. Middleware Safe Import (Taake missing variable error na aaye)
 const authMiddleware = require('../middleware/authMiddleware') || {};
@@ -36,7 +37,7 @@ router.post('/book', verifyToken, (req, res, next) => {
 });
 
 // ===================================================================
-// 🚀 NEW VENDOR DASHBOARD INTEGRATION ROUTES (Swagger Documented)
+// 🚀 VENDOR DASHBOARD INTEGRATION ROUTES (Swagger Documented)
 // ===================================================================
 
 // 2. Get Vendor Specific Bookings (Vendor Dashboard Tab 2 ke liye data source)
@@ -61,6 +62,15 @@ router.put('/:id/status', verifyToken, (req, res, next) => {
         } 
     */
     updateBookingStatus(req, res, next);
+});
+
+// ===================================================================
+// 🚀 TASK 5 NEW: CUSTOMER DASHBOARD ROUTE
+// ===================================================================
+// #swagger.tags = ['Bookings']
+router.get('/customer/my-bookings', verifyToken, (req, res, next) => {
+    /* #swagger.description = 'Customer dashboard par personal active bookings fetch karne ke liye' */
+    getCustomerBookings(req, res, next);
 });
 
 module.exports = router;

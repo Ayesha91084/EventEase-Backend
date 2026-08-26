@@ -10,7 +10,7 @@ const createBooking = async (req, res) => {
         const { vendorId, eventDate, totalAmount, packageDetails } = req.body;
         
         // Logged-in user ki ID access
-        const customerId = req.user ? req.user.id : null; 
+        const customerId = req.user ? (req.user.id || req.user._id) : null; 
         
         if (!customerId) {
             return res.status(401).json({ success: false, message: "Unauthorized! Please login first." });
@@ -18,10 +18,10 @@ const createBooking = async (req, res) => {
 
         // Validation check
         if (!vendorId || !eventDate || !totalAmount || !packageDetails) {
-        return res.status(400).json({
-        success: false,
-        message: "Please provide all required fields.",
-        receivedFields: { vendorId, eventDate, totalAmount, packageDetails }
+            return res.status(400).json({
+                success: false,
+                message: "Please provide all required fields.",
+                receivedFields: { vendorId, eventDate, totalAmount, packageDetails }
             });
         }
 
@@ -83,16 +83,25 @@ const createBooking = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 NEW: GET VENDOR SPECIFIC BOOKINGS (For Vendor Dashboard Tab 2)
+// 🚀 GET VENDOR SPECIFIC BOOKINGS (For Vendor Dashboard Tab 2 & Earnings)
 // ===================================================================
 const getVendorBookings = async (req, res) => {
     try {
-        const { vendorId } = req.params;
-        const bookings = await Booking.find({ vendorId: vendorId }).populate('customer', 'name email').sort({ createdAt: -1 });
+        const vendorId = req.params.vendorId || (req.user ? (req.user.id || req.user._id) : null);
+        
+        const bookings = await Booking.find({ vendorId: vendorId })
+            .populate('customer', 'name email phone profileImage')
+            .sort({ createdAt: -1 });
+
+        // Calculate total earnings from accepted bookings
+        const totalEarnings = bookings
+            .filter(b => b.status === 'accepted' || b.status === 'done')
+            .reduce((sum, item) => sum + (item.totalAmount || 0), 0);
         
         res.status(200).json({
             success: true,
             count: bookings.length,
+            totalEarnings,
             data: bookings
         });
     } catch (error) {
@@ -101,14 +110,14 @@ const getVendorBookings = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 NEW: UPDATE BOOKING STATUS (Vendor Dashboard Accept/Reject Action)
+// 🚀 UPDATE BOOKING STATUS (Vendor Dashboard Accept/Reject Action)
 // ===================================================================
 const updateBookingStatus = async (req, res) => {
     try {
-        const { id } = req.params;
+        const id = req.params.id || req.params.bookingId;
         const { status } = req.body; // 'accepted' ya 'rejected' frontend control panel se
 
-        if (!['accepted', 'rejected', 'done'].includes(status)) {
+        if (!['accepted', 'rejected', 'done', 'pending'].includes(status)) {
             return res.status(400).json({ success: false, message: "Invalid status value" });
         }
 
@@ -132,4 +141,34 @@ const updateBookingStatus = async (req, res) => {
     }
 };
 
-module.exports = { createBooking, getVendorBookings, updateBookingStatus };
+// ===================================================================
+// 🚀 TASK 5 NEW: GET CUSTOMER DASHBOARD BOOKINGS (Customer View Only)
+// ===================================================================
+const getCustomerBookings = async (req, res) => {
+    try {
+        const customerId = req.user ? (req.user.id || req.user._id) : req.params.customerId;
+
+        if (!customerId) {
+            return res.status(401).json({ success: false, message: "User context not found." });
+        }
+
+        const bookings = await Booking.find({ customer: customerId })
+            .populate('vendorId', 'businessName category profileImage location')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: bookings.length,
+            data: bookings
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+module.exports = { 
+    createBooking, 
+    getVendorBookings, 
+    updateBookingStatus,
+    getCustomerBookings 
+};
