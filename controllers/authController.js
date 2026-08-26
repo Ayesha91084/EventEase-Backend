@@ -20,7 +20,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // ===================================================================
-// 🚀 SIGNUP CONTROLLER (USER / VENDOR REGISTRATION WITH OTP)
+// 🚀 SIGNUP CONTROLLER (WITH STRICT ROLE GUARD)
 // ===================================================================
 exports.signup = async (req, res) => {
     try {
@@ -29,6 +29,18 @@ exports.signup = async (req, res) => {
         let user = await User.findOne({ email });
         if (user) {
             return res.status(400).json({ message: "User already exists with this email." });
+        }
+
+        // 🔒 TASK 1 FIX: Strict Role Guard
+        // Public signup se koi "admin" nahi ban sakta.
+        let assignedRole = 'customer'; 
+        if (role === 'vendor') {
+            assignedRole = 'vendor';
+        } else if (role === 'admin') {
+            return res.status(403).json({ 
+                success: false,
+                message: "Security Alert: Admin role cannot be created via public signup." 
+            });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -48,7 +60,7 @@ exports.signup = async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            role: role || 'customer',
+            role: assignedRole,
             phone: phone || '',
             city,
             address,
@@ -249,111 +261,107 @@ exports.forgotPassword = async (req, res) => {
 // 🚀 RESET PASSWORD CONTROLLER
 // ===================================================================
 exports.resetPassword = async (req, res) => {
-  try {
-    const { email, newPassword } = req.body;
+    try {
+        const { email, newPassword } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        
+        user.otp = undefined;
+        user.otpExpires = undefined;
+        await user.save();
+
+        res.status(200).json({ message: "Password reset successful!" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error during password reset" });
     }
-
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-    
-    user.otp = undefined;
-    user.otpExpires = undefined;
-    await user.save();
-
-    res.status(200).json({ message: "Password reset successful!" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error during password reset" });
-  }
 };
-//const { OAuth2Client } = require('google-auth-library');
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
 
-// Variable name changed to 'googleOAuthClient' to avoid duplicate identifier crash
+// ===================================================================
+// 🚀 GOOGLE AUTHENTICATION CONTROLLER
+// ===================================================================
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
 const googleOAuthClient = new OAuth2Client(CLIENT_ID);
 
 exports.googleAuth = async (req, res) => {
-  try {
-    const token = req.body.token || req.body.credential;
-    const selectedRole = req.body.role;
-
-    if (!token) {
-      return res.status(400).json({ success: false, message: "Token missing" });
-    }
-
-    let email, name, googleId;
-
     try {
-      const ticket = await googleOAuthClient.verifyIdToken({
-        idToken: token,
-        audience: CLIENT_ID,
-      });
-      const payload = ticket.getPayload();
-      email = payload.email;
-      name = payload.name;
-      googleId = payload.sub;
-    } catch (verifyError) {
-      // Fallback: direct decode if token structure allows
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const payload = JSON.parse(Buffer.from(base64, 'base64').toString());
-      email = payload.email;
-      name = payload.name;
-      googleId = payload.sub;
+        const token = req.body.token || req.body.credential;
+        const selectedRole = req.body.role;
+
+        if (!token) {
+            return res.status(400).json({ success: false, message: "Token missing" });
+        }
+
+        let email, name, googleId;
+
+        try {
+            const ticket = await googleOAuthClient.verifyIdToken({
+                idToken: token,
+                audience: CLIENT_ID,
+            });
+            const payload = ticket.getPayload();
+            email = payload.email;
+            name = payload.name;
+            googleId = payload.sub;
+        } catch (verifyError) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(Buffer.from(base64, 'base64').toString());
+            email = payload.email;
+            name = payload.name;
+            googleId = payload.sub;
+        }
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Invalid email in token" });
+        }
+
+        let user = await User.findOne({ email });
+        if (!user) {
+            user = new User({
+                name: name || "Google User",
+                email: email,
+                googleId: googleId,
+                isVerified: true,
+                role: selectedRole === 'admin' ? 'customer' : (selectedRole || "customer") // Security override for Google Auth too
+            });
+            await user.save();
+        } else {
+            if (selectedRole && selectedRole !== 'admin') {
+                user.role = selectedRole;
+                if (!user.googleId) user.googleId = googleId;
+                user.isVerified = true;
+                await user.save();
+            }
+        }
+
+        const appToken = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET || 'secretKey',
+            { expiresIn: "7d" }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Google login successful",
+            token: appToken,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+
+    } catch (err) {
+        console.error("Google Login Error:", err);
+        return res.status(400).json({ success: false, message: "Google Auth Failed", error: err.message });
     }
-
-    if (!email) {
-      return res.status(400).json({ success: false, message: "Invalid email in token" });
-    }
-
-    // User Find or Create
-    let user = await User.findOne({ email });
-    if (!user) {
-  // Agar bilkul NAYA user hai, to dropdown se select kiya hua role save karein
-  user = new User({
-    name: name || "Google User",
-    email: email,
-    googleId: googleId,
-    isVerified: true,
-    role: selectedRole || "customer" 
-  });
-  await user.save();
-} else {
-  // Agar user PEHLE SE exist karta hai aur usne role change karke Google Auth kiya hai, to Role UPDATE karein
-  if (selectedRole) {
-    user.role = selectedRole;
-    if (!user.googleId) user.googleId = googleId;
-    user.isVerified = true;
-    await user.save();
-  }
-}
-
-    // App JWT Generation
-    const appToken = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET || 'secretKey',
-      { expiresIn: "7d" }
-    );
-
-    return res.status(200).json({
-      success: true,
-      message: "Google login successful",
-      token: appToken,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
-    });
-
-  } catch (err) {
-    console.error("Google Login Error:", err);
-    return res.status(400).json({ success: false, message: "Google Auth Failed", error: err.message });
-  }
 };
 
 exports.googleLogin = exports.googleAuth;
