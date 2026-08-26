@@ -10,18 +10,36 @@ const vendorProfileSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  category: {
+    type: String,
+    default: "Decorator"
+  },
   description: {
     type: String
   },
   
-  // 🚀 NEW: Profile Picture URL (Cloudinary Link Save Karne Ke Liye)
+  // 🚀 Profile Picture URL (Cloudinary Link)
   profileImage: {
     type: String,
     default: ""
   },
 
+  // 🚀 TASK 4: Cloudinary Multi-Media Portfolio Arrays (Enforcing 5 Images, 3 Videos)
+  portfolioImages: {
+    type: [String],
+    validate: [val => val.length <= 5, 'Maximum 5 portfolio images allowed.'],
+    default: []
+  },
+  portfolioVideos: {
+    type: [String],
+    validate: [val => val.length <= 3, 'Maximum 3 portfolio videos allowed.'],
+    default: []
+  },
+
   // Location details with OpenStreetMap coordinates
   location: {
+    country: { type: String, default: "Pakistan" },
+    state: { type: String, default: "Punjab" },
     city: { type: String, required: true },
     address: { type: String, required: true },
     
@@ -43,6 +61,11 @@ const vendorProfileSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
   },
   rating: {
     type: Number,

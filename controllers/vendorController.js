@@ -76,7 +76,7 @@ const registerVendor = async (req, res) => {
         const userCheck = await User.findById(targetUserId);
         if (userCheck) {
             userCheck.role = 'vendor';
-            userCheck.isVerified = false; // Admin approval required
+            userCheck.isVerified = false; // Pending Admin Approval
             await userCheck.save();
         }
 
@@ -86,7 +86,9 @@ const registerVendor = async (req, res) => {
             category: businessType || "Decorator", 
             location: finalLocation,
             description: description || "Providing premium event packages",
-            cnicImage: documentUrls[0] || "mock-cloud-path.png"
+            cnicImage: documentUrls[0] || "mock-cloud-path.png",
+            isVerified: false,
+            status: 'pending'
         });
 
         await newVendor.save();
@@ -134,14 +136,13 @@ const updateVendorLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 4. TASK 2: CASCADING SEARCH & VERIFIED VENDORS FILTER
+// 🚀 4. TASK 2 & 3: CASCADING SEARCH & VERIFIED VENDORS ONLY
 // ===================================================================
 const searchVendorsByLocation = async (req, res) => {
     try {
         const { country, state, city, category } = req.query;
         
-        // Base Query: Only show approved vendors to public
-        let query = {};
+        let query = { isVerified: true };
 
         if (country) query["location.country"] = { $regex: country, $options: "i" };
         if (state) query["location.state"] = { $regex: state, $options: "i" };
@@ -149,9 +150,7 @@ const searchVendorsByLocation = async (req, res) => {
         if (category) query["category"] = { $regex: category, $options: "i" };
 
         const vendors = await Vendor.find(query).populate('userId', 'name email isVerified');
-        
-        // Filter out vendors where user isNotVerified if applicable
-        const verifiedVendors = vendors.filter(v => v.userId && v.userId.isVerified !== false);
+        const verifiedVendors = vendors.filter(v => v.userId && v.userId.isVerified === true);
 
         return res.status(200).json({ 
             success: true, 
@@ -163,9 +162,69 @@ const searchVendorsByLocation = async (req, res) => {
     }
 };
 
+// ===================================================================
+// 🚀 5. TASK 4: CLOUDINARY PORTFOLIO MULTI-MEDIA UPLOAD (MAX 5 IMAGES, MAX 3 VIDEOS)
+// ===================================================================
+const uploadPortfolioMedia = async (req, res) => {
+    try {
+        const { vendorId } = req.params;
+        const vendor = await Vendor.findById(vendorId);
+
+        if (!vendor) {
+            return res.status(404).json({ success: false, message: "Vendor profile not found" });
+        }
+
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ success: false, message: "No media files uploaded" });
+        }
+
+        let images = [...vendor.portfolioImages];
+        let videos = [...vendor.portfolioVideos];
+
+        for (const file of req.files) {
+            const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+            const isVideo = file.mimetype.startsWith('video');
+
+            if (isVideo) {
+                if (videos.length >= 3) {
+                    return res.status(400).json({ success: false, message: "Maximum limit reached: Only 3 videos allowed per portfolio." });
+                }
+                const uploadRes = await cloudinary.uploader.upload(fileBase64, {
+                    resource_type: 'video',
+                    folder: 'EventEase/vendors/portfolio/videos',
+                });
+                videos.push(uploadRes.secure_url);
+            } else {
+                if (images.length >= 5) {
+                    return res.status(400).json({ success: false, message: "Maximum limit reached: Only 5 images allowed per portfolio." });
+                }
+                const uploadRes = await cloudinary.uploader.upload(fileBase64, {
+                    folder: 'EventEase/vendors/portfolio/images',
+                });
+                images.push(uploadRes.secure_url);
+            }
+        }
+
+        vendor.portfolioImages = images;
+        vendor.portfolioVideos = videos;
+        await vendor.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Portfolio media updated successfully!",
+            portfolioImages: vendor.portfolioImages,
+            portfolioVideos: vendor.portfolioVideos
+        });
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Media upload failed", error: error.message });
+    }
+};
+
 module.exports = { 
   uploadProfilePicture, 
   registerVendor, 
   updateVendorLocation, 
-  searchVendorsByLocation 
+  searchVendorsByLocation,
+  uploadPortfolioMedia
 };

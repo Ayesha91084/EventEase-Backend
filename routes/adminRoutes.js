@@ -24,7 +24,7 @@ router.delete('/user/:id', protect, admin, deleteUser);
 router.get('/stats', protect, admin, getDashboardStats);
 router.get('/summary', protect, admin, getDashboardSummary);
 
-// 🚀 ADMIN VENDOR VERIFICATION PANEL ROUTES
+// 🚀 TASK 3: ADMIN VENDOR VERIFICATION PANEL ROUTES
 router.get('/pending', protect, admin, (req, res, next) => {
     getPendingVendors(req, res, next);
 });

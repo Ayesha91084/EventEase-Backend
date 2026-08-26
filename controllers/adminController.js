@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const Booking = require('../models/Booking');
 const Service = require('../models/Service');
-const Vendor = require('../models/VendorProfile'); // Added for profile query
+const VendorProfile = require('../models/VendorProfile');
 
 // Get all users
 const getAllUsers = async (req, res) => {
@@ -57,20 +57,26 @@ const getDashboardSummary = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 NEW: GET ALL PENDING VENDORS (For Admin Verification Panel)
+// 🚀 TASK 3: GET ALL PENDING VENDORS (User + VendorProfile Lookup)
 // ===================================================================
 const getPendingVendors = async (req, res) => {
     try {
-        // Main user credentials table se status check query lagayi
-        const pendingVendors = await User.find({ role: 'vendor', isVerified: false }).select('-password');
-        res.status(200).json({ success: true, data: pendingVendors });
+        const pendingUsers = await User.find({ role: 'vendor', isVerified: false }).select('-password');
+        const pendingProfiles = await VendorProfile.find({ isVerified: false });
+
+        res.status(200).json({ 
+            success: true, 
+            count: pendingUsers.length,
+            users: pendingUsers,
+            profiles: pendingProfiles
+        });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 };
 
 // ===================================================================
-// 🚀 NEW: APPROVE OR REJECT VENDOR PROFILES (Admin Action Control)
+// 🚀 TASK 3: APPROVE OR REJECT VENDOR PROFILES (Dual Table Sync)
 // ===================================================================
 const verifyVendor = async (req, res) => {
     try {
@@ -79,27 +85,36 @@ const verifyVendor = async (req, res) => {
 
         const isApproved = status === 'approved';
 
+        // 1. User Account Verification Update
         const updatedUser = await User.findByIdAndUpdate(
             id,
             { isVerified: isApproved },
             { new: true }
         ).select('-password');
 
-        if (!updatedUser) {
-            return res.status(404).json({ success: false, message: "User profile context not found." });
+        // 2. Vendor Profile Sync
+        const updatedProfile = await VendorProfile.findOneAndUpdate(
+            { $or: [{ userId: id }, { _id: id }] },
+            { isVerified: isApproved, status: isApproved ? 'approved' : 'rejected' },
+            { new: true }
+        );
+
+        if (!updatedUser && !updatedProfile) {
+            return res.status(404).json({ success: false, message: "Vendor profile/user record not found." });
         }
 
         res.status(200).json({ 
             success: true, 
             message: `Vendor verified flag toggled to ${status}`, 
-            data: updatedUser 
+            user: updatedUser,
+            profile: updatedProfile
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 };
 
-// Sab ko ek sath single export me rakhein
+// Single module exports
 module.exports = { 
     getAllUsers, 
     deleteUser, 
