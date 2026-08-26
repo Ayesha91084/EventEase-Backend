@@ -13,15 +13,22 @@ const bookingSchema = new mongoose.Schema({
     eventDate: { type: Date, required: true },
     status: { 
         type: String, 
-        enum: ['pending', 'confirmed', 'cancelled', 'completed'], 
+        enum: ['pending', 'accepted', 'confirmed', 'cancelled', 'completed'], 
         default: 'pending' 
     },
     totalAmount: { type: Number, required: true },
+    
+    // 🚀 TASK 6: Dynamic Admin Commission & Vendor Payout Fields
+    commissionRate: { type: Number, default: 10 }, // 10% Default Platform Fee
+    adminCommission: { type: Number, default: 0 },
+    vendorPayout: { type: Number, default: 0 },
+    
     paymentStatus: { 
         type: String, 
         enum: ['pending', 'paid', 'refunded'], 
         default: 'pending' 
-    }
+    },
+    paymentIntentId: { type: String, default: "" }
 }, { timestamps: true });
 
 bookingSchema.index({ customer: 1 });

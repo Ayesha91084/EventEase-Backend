@@ -1,41 +1,57 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Booking = require('../models/Booking');
 
-// @desc    Process Payment using Stripe Sandbox
+// @desc    Process Payment using Stripe Sandbox & Platform Commission Deduction
 // @route   POST /api/payments/charge
 const processPayment = async (req, res) => {
     try {
-        const { bookingId, token } = req.body;
+        const { bookingId, token, amount } = req.body;
 
         if (!bookingId || !token) {
             return res.status(400).json({ success: false, message: "Booking ID and Payment Token are required." });
         }
 
-        // 1. Stripe Sandbox Charge Create karein
-        const charge = await stripe.charges.create({
-            amount: 50000 * 100, // Cents me amount (e.g., 50000 PKR)
-            currency: 'pkr',
-            source: token, // Postman se 'tok_visa' bhejein ge
-            description: `Payment for EventEase Booking ID: ${bookingId}`,
-        });
-
-        // 2. Database me Booking status update karein
-        const updatedBooking = await Booking.findByIdAndUpdate(
-            bookingId,
-            { status: 'confirmed', paymentStatus: 'paid' },
-            { new: true } // Taake updated record wapas mile
-        );
-
-        if (!updatedBooking) {
+        // 1. Fetch Target Booking Record
+        const targetBooking = await Booking.findById(bookingId);
+        if (!targetBooking) {
             return res.status(404).json({ success: false, message: "Booking ID not found in database." });
         }
 
+        const grossAmount = amount || targetBooking.totalAmount || 50000;
+
+        // 2. Stripe Sandbox Charge Create
+        const charge = await stripe.charges.create({
+            amount: Math.round(grossAmount * 100), // Cents calculation
+            currency: 'pkr',
+            source: token, // Postman Sandbox: 'tok_visa'
+            description: `Payment for EventEase Booking ID: ${bookingId}`,
+        });
+
+        // 3. TASK 6: 10% Platform Commission Math Execution
+        const rate = targetBooking.commissionRate || 10;
+        const calculatedCommission = (grossAmount * rate) / 100;
+        const calculatedVendorPayout = grossAmount - calculatedCommission;
+
+        // 4. Update Booking Document with Financial Audit
+        targetBooking.status = 'confirmed';
+        targetBooking.paymentStatus = 'paid';
+        targetBooking.paymentIntentId = charge.id;
+        targetBooking.adminCommission = calculatedCommission;
+        targetBooking.vendorPayout = calculatedVendorPayout;
+
+        await targetBooking.save();
+
         return res.status(200).json({
             success: true,
-            message: "Payment Processed Successfully via Stripe Sandbox! Booking Confirmed.",
+            message: "Payment Processed Successfully via Stripe Sandbox! Platform Commission Deducted.",
             chargeId: charge.id,
-            bookingStatus: updatedBooking.status,
-            paymentStatus: updatedBooking.paymentStatus
+            bookingStatus: targetBooking.status,
+            paymentStatus: targetBooking.paymentStatus,
+            financialBreakdown: {
+                totalPaid: grossAmount,
+                adminCommission: calculatedCommission,
+                vendorNetPayout: calculatedVendorPayout
+            }
         });
 
     } catch (error) {
