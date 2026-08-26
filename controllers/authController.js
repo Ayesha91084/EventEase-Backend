@@ -9,10 +9,11 @@ const client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com"
 );
 
-// 📧 Transporter Setup (Mailtrap / Dynamic `.env` Read)
+// 🚀 REAL GMAIL SMTP TRANSPORTER SETUP
 const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || "sandbox.smtp.mailtrap.io",
-    port: process.env.EMAIL_PORT || 2525,
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    port: process.env.EMAIL_PORT || 465,
+    secure: true, // SSL Enabled for Port 465
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -31,8 +32,7 @@ exports.signup = async (req, res) => {
             return res.status(400).json({ message: "User already exists with this email." });
         }
 
-        // 🔒 TASK 1 FIX: Strict Role Guard
-        // Public signup se koi "admin" nahi ban sakta.
+        // 🔒 Public signup strict role guard
         let assignedRole = 'customer'; 
         if (role === 'vendor') {
             assignedRole = 'vendor';
@@ -74,7 +74,7 @@ exports.signup = async (req, res) => {
         await user.save();
 
         const mailOptions = {
-            from: '"EventEase System" <auth@eventease.com>',
+            from: `"EventEase Security" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: 'EventEase - Account Verification OTP',
             html: `
@@ -228,7 +228,7 @@ exports.forgotPassword = async (req, res) => {
         await user.save();
 
         const mailOptions = {
-            from: '"EventEase Support" <auth@eventease.com>',
+            from: `"EventEase Support" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: 'EventEase - Password Reset OTP',
             html: `
@@ -328,7 +328,7 @@ exports.googleAuth = async (req, res) => {
                 email: email,
                 googleId: googleId,
                 isVerified: true,
-                role: selectedRole === 'admin' ? 'customer' : (selectedRole || "customer") // Security override for Google Auth too
+                role: selectedRole === 'admin' ? 'customer' : (selectedRole || "customer")
             });
             await user.save();
         } else {
