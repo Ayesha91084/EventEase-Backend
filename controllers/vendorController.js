@@ -13,15 +13,12 @@ const uploadProfilePicture = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
 
-    // Convert file buffer to base64 string
     const fileBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
-    // Cloudinary Upload
     const uploadResponse = await cloudinary.uploader.upload(fileBase64, {
       folder: 'EventEase/vendors/profiles',
     });
 
-    // Database update
     const updatedVendor = await Vendor.findByIdAndUpdate(
       vendorId,
       { profileImage: uploadResponse.secure_url },
@@ -45,13 +42,12 @@ const uploadProfilePicture = async (req, res) => {
 // ===================================================================
 const registerVendor = async (req, res) => {
     try {
-        const { userId, user, businessName, businessType, location, description, documents } = req.body;
+        const { userId, user, businessName, businessType, country, state, city, address, description, documents } = req.body;
         
         const targetUserId = userId || user || req.body.user || "64b0f1a2c3d4e5f6a7b8c9d0";
 
         let documentUrls = [];
 
-        // ☁️ Direct Cloudinary Upload Logic using Buffer Data
         if (req.files && req.files.length > 0) {
             for (const file of req.files) {
                 const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
@@ -70,14 +66,17 @@ const registerVendor = async (req, res) => {
             documentUrls = Array.isArray(documents) ? documents : [documents];
         }
 
-        let finalLocation = { city: "Mandi Bahauddin", address: "Main Bazaar" };
-        if (req.body.city) finalLocation.city = req.body.city;
-        if (req.body.address) finalLocation.address = req.body.address;
+        let finalLocation = { 
+            country: country || "Pakistan",
+            state: state || "Punjab",
+            city: city || "Mandi Bahauddin", 
+            address: address || "Main Bazaar" 
+        };
 
         const userCheck = await User.findById(targetUserId);
         if (userCheck) {
             userCheck.role = 'vendor';
-            userCheck.isVerified = false; 
+            userCheck.isVerified = false; // Admin approval required
             await userCheck.save();
         }
 
@@ -94,21 +93,21 @@ const registerVendor = async (req, res) => {
 
         return res.status(201).json({
             success: true,
-            message: "Vendor registered successfully! Documents uploaded to Cloudinary.",
+            message: "Vendor registered successfully! Pending admin verification.",
             vendor: newVendor
         });
 
     } catch (error) {
-        return res.status(200).json({ 
-            success: true, 
-            message: "Vendor data processed context sync!",
-            vendor: { businessName: req.body.businessName || "Event Vendor" }
+        return res.status(500).json({ 
+            success: false, 
+            message: "Vendor registration failed",
+            error: error.message
         });
     }
 };
 
 // ===================================================================
-// 🚀 3. COORDINATES MAP GENERATOR
+// 🚀 3. COORDINATES MAP GENERATOR (OPENSTREETMAP/GEOLOCATION)
 // ===================================================================
 const updateVendorLocation = async (req, res) => {
     try {
@@ -121,7 +120,7 @@ const updateVendorLocation = async (req, res) => {
         const updatedProfile = await Vendor.findOneAndUpdate(
             { _id: vendorId }, 
             { $set: { "location.latitude": Number(latitude), "location.longitude": Number(longitude) } },
-            { returnDocument: 'after' }
+            { new: true }
         );
 
         return res.status(200).json({
@@ -135,19 +134,32 @@ const updateVendorLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 4. LOCATION QUERIES CONTROLLER
+// 🚀 4. TASK 2: CASCADING SEARCH & VERIFIED VENDORS FILTER
 // ===================================================================
 const searchVendorsByLocation = async (req, res) => {
     try {
-        const { city } = req.query;
+        const { country, state, city, category } = req.query;
+        
+        // Base Query: Only show approved vendors to public
         let query = {};
-        if (city) {
-            query["location.city"] = { $regex: city, $options: "i" };
-        }
-        const vendors = await Vendor.find(query);
-        return res.status(200).json({ success: true, count: vendors.length, vendors });
+
+        if (country) query["location.country"] = { $regex: country, $options: "i" };
+        if (state) query["location.state"] = { $regex: state, $options: "i" };
+        if (city) query["location.city"] = { $regex: city, $options: "i" };
+        if (category) query["category"] = { $regex: category, $options: "i" };
+
+        const vendors = await Vendor.find(query).populate('userId', 'name email isVerified');
+        
+        // Filter out vendors where user isNotVerified if applicable
+        const verifiedVendors = vendors.filter(v => v.userId && v.userId.isVerified !== false);
+
+        return res.status(200).json({ 
+            success: true, 
+            count: verifiedVendors.length, 
+            vendors: verifiedVendors 
+        });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Query log error." });
+        return res.status(500).json({ success: false, message: "Query log error.", error: error.message });
     }
 };
 
