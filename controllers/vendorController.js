@@ -44,10 +44,16 @@ const registerVendor = async (req, res) => {
     try {
         const { userId, user, businessName, businessType, country, state, city, address, description, documents } = req.body;
         
-        const targetUserId = userId || user || req.body.user || "64b0f1a2c3d4e5f6a7b8c9d0";
+        // Priority check for auth token id or body user id
+        const targetUserId = req.user?.id || req.user?._id || userId || user || req.body.user;
+
+        if (!targetUserId) {
+            return res.status(400).json({ success: false, message: "User ID is required for vendor registration." });
+        }
 
         let documentUrls = [];
 
+        // Handle uploaded file buffers via Multer
         if (req.files && req.files.length > 0) {
             for (const file of req.files) {
                 const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
@@ -73,10 +79,11 @@ const registerVendor = async (req, res) => {
             address: address || "Main Bazaar" 
         };
 
+        // Update User Role and verification status
         const userCheck = await User.findById(targetUserId);
         if (userCheck) {
             userCheck.role = 'vendor';
-            userCheck.isVerified = false; // Pending Admin Approval
+            userCheck.isVerified = false; // Requires Admin Approval
             await userCheck.save();
         }
 
@@ -86,7 +93,7 @@ const registerVendor = async (req, res) => {
             category: businessType || "Decorator", 
             location: finalLocation,
             description: description || "Providing premium event packages",
-            cnicImage: documentUrls[0] || "mock-cloud-path.png",
+            cnicImage: documentUrls[0] || "",
             isVerified: false,
             status: 'pending'
         });
@@ -100,6 +107,7 @@ const registerVendor = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("Vendor Register Error:", error);
         return res.status(500).json({ 
             success: false, 
             message: "Vendor registration failed",
@@ -136,7 +144,7 @@ const updateVendorLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 4. TASK 2 & 3: CASCADING SEARCH & VERIFIED VENDORS ONLY
+// 🚀 4. CASCADING SEARCH & VERIFIED VENDORS ONLY
 // ===================================================================
 const searchVendorsByLocation = async (req, res) => {
     try {
@@ -163,7 +171,7 @@ const searchVendorsByLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 5. TASK 4: CLOUDINARY PORTFOLIO MULTI-MEDIA UPLOAD (MAX 5 IMAGES, MAX 3 VIDEOS)
+// 🚀 5. CLOUDINARY PORTFOLIO MULTI-MEDIA UPLOAD (MAX 5 IMAGES, MAX 3 VIDEOS)
 // ===================================================================
 const uploadPortfolioMedia = async (req, res) => {
     try {
