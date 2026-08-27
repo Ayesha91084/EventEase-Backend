@@ -92,9 +92,13 @@ const connectDB = async () => {
 
 connectDB();
 
+// Render and Production Ready Server Port Listening
 const PORT = process.env.PORT || 5000;
-if (process.env.NODE_ENV !== 'production') {
-    server.listen(PORT, () => console.log(`SERVER: Started on port ${PORT}`));
-}
+
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`------------------------------------------------`);
+    console.log(`SERVER: Started successfully on port ${PORT}`);
+    console.log(`------------------------------------------------`);
+});
 
 module.exports = app;
