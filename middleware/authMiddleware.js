@@ -1,47 +1,37 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// ==========================================
-// 1. LOGIN & JWT PROTECT MIDDLEWARE
-// ==========================================
-exports.protect = async (req, res, next) => {
+// 1. Protect Middleware (JWT Verification)
+const protect = async (req, res, next) => {
     let token;
 
-    // Check authorization header for Bearer token
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
-            // Extract token string
             token = req.headers.authorization.split(' ')[1];
-
-            // Verify JWT Token
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
-
-            // Find User & attach to request object (excluding password)
-            req.user = await User.findById(decoded.id || decoded._id).select('-password');
-
-            if (!req.user) {
-                return res.status(401).json({ success: false, message: 'User account no longer exists.' });
-            }
-
-            return next(); // End execution here
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = await User.findById(decoded.id).select('-password');
+            return next();
         } catch (error) {
-            console.error('JWT Auth Middleware Error:', error.message);
-            return res.status(401).json({ success: false, message: 'Not authorized, token failed or expired.' });
+            return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
         }
     }
 
     if (!token) {
-        return res.status(401).json({ success: false, message: 'Not authorized, no token provided.' });
+        return res.status(401).json({ success: false, message: 'Not authorized, no token' });
     }
 };
 
-// ==========================================
-// 2. ADMIN ROLE CHECK MIDDLEWARE
-// ==========================================
-exports.admin = (req, res, next) => {
-    if (req.user && req.user.role === 'admin') {
-        return next();
-    } else {
-        return res.status(403).json({ success: false, message: 'Not authorized as an admin access.' });
-    }
+// 2. Authorize Middleware (Role-Based Access Control)
+const authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!req.user || !roles.includes(req.user.role)) {
+            return res.status(403).json({
+                success: false,
+                message: `User role '${req.user?.role}' is not authorized to access this route`
+            });
+        }
+        next();
+    };
 };
+
+module.exports = { protect, authorize };
