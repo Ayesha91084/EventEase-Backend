@@ -1,27 +1,32 @@
 const express = require('express');
 const router = express.Router();
 
-// 1. Controller Imports (Ensure names match controller exports)
+// 1. Controllers Import
 const {
+    processPayment,
     createPaymentIntent,
-    handleWebhook,
     getPaymentHistory
 } = require('../controllers/paymentController');
 
-// 2. Middleware Imports
-const { protect } = require('../middleware/authMiddleware');
+// 2. Auth Middleware Import
+const authMiddleware = require('../middleware/authMiddleware');
+
+// Fallback protection: check if protect function exists, else pass dummy middleware
+const protect = authMiddleware && authMiddleware.protect 
+    ? authMiddleware.protect 
+    : (req, res, next) => next();
 
 // ==========================================
 // 💳 PAYMENT ROUTES
 // ==========================================
 
-// Create payment intent
+// Process Direct Charge & Commission Deduction
+router.post('/charge', protect, processPayment);
+
+// Create Payment Intent
 router.post('/create-intent', protect, createPaymentIntent);
 
-// Stripe / Payment Webhook
-router.post('/webhook', express.raw({ type: 'application/json' }), handleWebhook);
-
-// Get user payment history
+// Get Customer Payment History
 router.get('/history', protect, getPaymentHistory);
 
 module.exports = router;

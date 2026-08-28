@@ -1,11 +1,7 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy_key');
 const Booking = require('../models/Booking');
 
-// ==========================================
-// 1. PROCESS PAYMENT & PLATFORM COMMISSION (STRIPE)
-// ==========================================
-// @route   POST /api/payments/charge
-// @access  Private (Customer Only)
+// 1. Process Payment Controller
 const processPayment = async (req, res) => {
     try {
         const { bookingId, token, amount } = req.body;
@@ -17,7 +13,6 @@ const processPayment = async (req, res) => {
             });
         }
 
-        // Fetch Target Booking Record
         const targetBooking = await Booking.findById(bookingId);
         if (!targetBooking) {
             return res.status(404).json({ 
@@ -26,7 +21,6 @@ const processPayment = async (req, res) => {
             });
         }
 
-        // Prevent Double Payment
         if (targetBooking.paymentStatus === 'paid') {
             return res.status(400).json({ 
                 success: false, 
@@ -36,13 +30,12 @@ const processPayment = async (req, res) => {
 
         const grossAmount = Number(amount || targetBooking.totalAmount || 50000);
 
-        // Modern Stripe PaymentIntent / Charge Creation
         let chargeId;
         try {
             const charge = await stripe.charges.create({
-                amount: Math.round(grossAmount * 100), // Cents / Paisa calculation
+                amount: Math.round(grossAmount * 100),
                 currency: 'pkr',
-                source: token, // Postman Sandbox: 'tok_visa'
+                source: token,
                 description: `Payment for EventEase Booking ID: ${bookingId}`,
             });
             chargeId = charge.id;
@@ -53,12 +46,10 @@ const processPayment = async (req, res) => {
             });
         }
 
-        // 10% Platform Commission Calculation
         const rate = targetBooking.commissionRate || 10;
         const calculatedCommission = (grossAmount * rate) / 100;
         const calculatedVendorPayout = grossAmount - calculatedCommission;
 
-        // Financial Audit Update in DB
         targetBooking.status = 'accepted';
         targetBooking.paymentStatus = 'paid';
         targetBooking.paymentIntentId = chargeId;
@@ -86,9 +77,7 @@ const processPayment = async (req, res) => {
     }
 };
 
-// ==========================================
-// 2. CREATE PAYMENT INTENT (STRIPE INTEGRATION)
-// ==========================================
+// 2. Create Payment Intent Controller
 const createPaymentIntent = async (req, res) => {
     try {
         const { amount, currency } = req.body;
@@ -107,9 +96,7 @@ const createPaymentIntent = async (req, res) => {
     }
 };
 
-// ==========================================
-// 3. GET USER PAYMENT HISTORY
-// ==========================================
+// 3. Get Payment History Controller
 const getPaymentHistory = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id;
