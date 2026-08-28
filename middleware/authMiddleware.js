@@ -1,38 +1,47 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// 1. Login check karne ke liye middleware
+// ==========================================
+// 1. LOGIN & JWT PROTECT MIDDLEWARE
+// ==========================================
 exports.protect = async (req, res, next) => {
     let token;
 
-    // Check karna ke header mein token hai ya nahi
+    // Check authorization header for Bearer token
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
-            // Token ko "Bearer <token>" se alag karna
+            // Extract token string
             token = req.headers.authorization.split(' ')[1];
 
-            // Token verify karna
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            // Verify JWT Token
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
 
-            // User ka data request mein add karna (password ke baghair)
-            req.user = await User.findById(decoded.id).select('-password');
-            
-            next();
+            // Find User & attach to request object (excluding password)
+            req.user = await User.findById(decoded.id || decoded._id).select('-password');
+
+            if (!req.user) {
+                return res.status(401).json({ success: false, message: 'User account no longer exists.' });
+            }
+
+            return next(); // End execution here
         } catch (error) {
-            res.status(401).json({ message: 'Not authorized, token failed' });
+            console.error('JWT Auth Middleware Error:', error.message);
+            return res.status(401).json({ success: false, message: 'Not authorized, token failed or expired.' });
         }
     }
 
     if (!token) {
-        res.status(401).json({ message: 'Not authorized, no token' });
+        return res.status(401).json({ success: false, message: 'Not authorized, no token provided.' });
     }
 };
 
-// 2. Admin check karne ke liye middleware
+// ==========================================
+// 2. ADMIN ROLE CHECK MIDDLEWARE
+// ==========================================
 exports.admin = (req, res, next) => {
     if (req.user && req.user.role === 'admin') {
-        next();
+        return next();
     } else {
-        res.status(403).json({ message: 'Not authorized as an admin' });
+        return res.status(403).json({ success: false, message: 'Not authorized as an admin access.' });
     }
 };

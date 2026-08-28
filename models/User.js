@@ -1,24 +1,28 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
+        required: [true, 'Name is required'],
+        trim: true
     },
     email: {
         type: String,
-        required: true,
-        unique: true
+        required: [true, 'Email is required'],
+        unique: true,
+        lowercase: true,
+        trim: true
     },
     password: {
         type: String,
         required: function() {
-            return !this.googleId;   // ✅ sirf tab required jab googleId na ho
+            return !this.googleId; // Sirf manual signup par required hai, Google Login par nahi
         }
     },
     googleId: {
         type: String,
-        default: null              // ✅ ye naya field add karein
+        default: null
     },
     role: {
         type: String,
@@ -26,7 +30,9 @@ const userSchema = new mongoose.Schema({
         default: 'customer'
     },
     phone: {
-        type: String
+        type: String,
+        trim: true,
+        default: ""
     },
     profileImage: {
         type: String,
@@ -46,6 +52,21 @@ const userSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// 🚀 Fast Query Indexes
 userSchema.index({ role: 1 });
+userSchema.index({ googleId: 1 }, { sparse: true }); // Allows multiple null values safely
+
+// 🔐 Password Hashing Pre-Save Hook
+userSchema.pre('save', async function(next) {
+    if (!this.isModified('password') || !this.password) return next();
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+});
+
+// 🔓 Method to compare password during Login
+userSchema.methods.matchPassword = async function(enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+};
 
 module.exports = mongoose.model('User', userSchema);

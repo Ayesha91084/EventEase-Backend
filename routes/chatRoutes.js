@@ -2,24 +2,23 @@ const express = require('express');
 const router = express.Router();
 
 // 1. Controllers Import
-const chatController = require('../controllers/chatController');
-const getChatHistory = chatController.getChatHistory;
-const saveMessage = chatController.saveMessage; // Backup save flow shamil kar diya
+const { getChatHistory, saveMessage } = require('../controllers/chatController');
 
-// 2. Middleware Safe Import
-const authMiddleware = require('../middleware/authMiddleware') || {};
-const verifyToken = authMiddleware.verifyToken || authMiddleware.protect || authMiddleware.checkAuth || ((req, res, next) => next());
+// 2. Auth Middleware Import
+const { protect } = require('../middleware/authMiddleware');
 
 // ==========================================
 // 🛠️ CHAT ROUTES DEFINITION
 // ==========================================
 
+// 1. Fetch Chat History Endpoint
 // #swagger.tags = ['Chat']
-// Asma jab frontend se call karegi: /api/chat/room/room_123?page=1&limit=20
-router.get('/room/:room', verifyToken, getChatHistory);
+// Asma Jab frontend se call karegi: /api/chat/room/room_123?page=1&limit=20
+router.get('/room/:room', protect, getChatHistory);
 
+// 2. Fallback HTTP Message Save Endpoint
 // #swagger.tags = ['Chat']
-// Message HTTP route se save karne ke liye: POST /api/chat/save
-router.post('/save', verifyToken, saveMessage);
+// Message HTTP API route se save karne ke liye: POST /api/chat/save
+router.post('/save', protect, saveMessage);
 
 module.exports = router;

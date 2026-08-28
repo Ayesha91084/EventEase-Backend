@@ -1,19 +1,29 @@
 const express = require('express');
 const router = express.Router();
 
-// 1. Controllers Import
-const ratingController = require('../controllers/ratingController') || {};
-const giveRating = ratingController.giveRating || ratingController.submitRating || ((req, res) => res.send("Rating submitted successfully"));
+// 1. Direct Controllers Import
+const { 
+    addReview, 
+    getVendorReviews, 
+    getCustomerReviews 
+} = require('../controllers/reviewController');
 
-// 2. Middleware Safe Import (Taake variable missing error na aaye)
-const authMiddleware = require('../middleware/authMiddleware') || {};
-const verifyToken = authMiddleware.verifyToken || authMiddleware.protect || authMiddleware.checkAuth || ((req, res, next) => next());
+// 2. Auth Middleware Import
+const { protect } = require('../middleware/authMiddleware');
+
+// #swagger.tags = ['Reviews & Ratings']
 
 // ==========================================
-// 🛠️ RATINGS & FEEDBACK ROUTES DEFINITION
+// 🛠️ REVIEWS & RATINGS ROUTES DEFINITION
 // ==========================================
 
-// #swagger.tags = ['Ratings & Feedback']
-router.post('/give-rating', verifyToken, giveRating);
+// 1. Submit New Review & Star Rating (Customer Only)
+router.post('/', protect, addReview);
+
+// 2. Fetch all reviews for a specific vendor (Public Page View)
+router.get('/vendor/:vendorId', getVendorReviews);
+
+// 3. Fetch reviews submitted by the logged-in customer (Customer Dashboard)
+router.get('/my-reviews', protect, getCustomerReviews);
 
 module.exports = router;

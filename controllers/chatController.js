@@ -1,28 +1,34 @@
 const Message = require('../models/Message');
 
-// @desc    Get chat history for a specific room (With Pagination)
+// ==========================================
+// 1. GET CHAT HISTORY (With Clean Pagination)
+// ==========================================
 // @route   GET /api/chat/room/:room
 const getChatHistory = async (req, res) => {
     try {
         const { room } = req.params;
 
-        // 🛠️ Pagination Parameters
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
+        if (!room) {
+            return res.status(400).json({ success: false, message: "Room ID/Name is required." });
+        }
+
+        // 🛠️ Pagination Parameters Setup
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.max(1, parseInt(req.query.limit) || 20);
         const skip = (page - 1) * limit;
 
-        // 1. Fetch latest messages from database
+        // 1. Fetch latest messages (descending order by timestamp or createdAt)
         const messages = await Message.find({ room })
-            .sort({ timestamp: -1 }) // Latest messages first
+            .sort({ createdAt: -1, timestamp: -1 })
             .skip(skip)
             .limit(limit);
 
-        // 2. Count metrics for frontend scroll triggers
+        // 2. Total count metrics for scroll triggers
         const totalMessages = await Message.countDocuments({ room });
         const totalPages = Math.ceil(totalMessages / limit);
 
-        // Reverse array back to chronological order for beautiful UI alignment
-        const chronologicalMessages = messages.reverse();
+        // Safe Immutable Reversal (Older -> Newer Order for UI alignment)
+        const chronologicalMessages = [...messages].reverse();
 
         return res.status(200).json({ 
             success: true, 
@@ -38,15 +44,41 @@ const getChatHistory = async (req, res) => {
     }
 };
 
-// @desc    Save message via HTTP (Optional / Backup flow)
+// ==========================================
+// 2. SAVE MESSAGE (HTTP Backup Flow + Socket.io Emission)
+// ==========================================
 // @route   POST /api/chat/save
 const saveMessage = async (req, res) => {
     try {
         const { room, sender, message } = req.body;
-        const newMessage = new Message({ room, sender, message });
+
+        // Validation Check
+        if (!room || !sender || !message) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Room, Sender, and Message content are required." 
+            });
+        }
+
+        const newMessage = new Message({ 
+            room, 
+            sender, 
+            message,
+            timestamp: new Date()
+        });
+
         await newMessage.save();
+
+        // 🚀 Realtime Broadcast via Socket.io (if attached to Express App)
+        const io = req.app.get('io');
+        if (io) {
+            io.to(room).emit('receive_message', newMessage);
+        }
+
         return res.status(201).json({ success: true, chat: newMessage });
+
     } catch (error) {
+        console.error("Save Message Error:", error);
         return res.status(500).json({ success: false, message: error.message });
     }
 };

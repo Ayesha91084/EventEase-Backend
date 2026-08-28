@@ -1,76 +1,66 @@
 const express = require('express');
 const router = express.Router();
 
-// 1. Controllers Import (Saare functions safely track karne ke liye update kiya)
-const bookingController = require('../controllers/bookingController') || {};
-const createBooking = bookingController.createBooking || bookingController.book || ((req, res) => res.send("Booking processed"));
-const getVendorBookings = bookingController.getVendorBookings || ((req, res) => res.send("Vendor bookings fetched"));
-const updateBookingStatus = bookingController.updateBookingStatus || ((req, res) => res.send("Booking status updated"));
-const getCustomerBookings = bookingController.getCustomerBookings || ((req, res) => res.send("Customer bookings fetched"));
+// 1. Direct Controllers Import
+const { 
+    createBooking, 
+    getVendorBookings, 
+    updateBookingStatus, 
+    getCustomerBookings 
+} = require('../controllers/bookingController');
 
-// 2. Middleware Safe Import (Taake missing variable error na aaye)
-const authMiddleware = require('../middleware/authMiddleware') || {};
-const verifyToken = authMiddleware.verifyToken || authMiddleware.protect || authMiddleware.checkAuth || ((req, res, next) => next());
+// 2. Authentication Middleware Import
+const { protect } = require('../middleware/authMiddleware');
 
 // ==========================================
 // 🛠️ BOOKING ROUTES DEFINITION
 // ==========================================
 
-// 1. Create Booking Route (Aapka existing routing logic with Swagger mapping)
+// 1. Create Booking Route (Customer places a booking request)
 // #swagger.tags = ['Bookings']
-router.post('/book', verifyToken, (req, res, next) => {
-    /* #swagger.requestBody = {
-            required: true,
-            content: {
-                "application/json": {
-                    schema: {
-                        $vendorId: "65f8a123abc456def7890123",
-                        $eventDate: "2026-07-15",
-                        $totalPrice: 25000,
-                        status: "pending"
-                    }
+router.post('/book', protect, createBooking);
+/* #swagger.requestBody = {
+        required: true,
+        content: {
+            "application/json": {
+                schema: {
+                    $vendorId: "65f8a123abc456def7890123",
+                    $eventDate: "2026-07-15",
+                    $totalPrice: 25000,
+                    status: "pending"
                 }
             }
-        } 
-    */
-    createBooking(req, res, next);
-});
+        }
+    } 
+*/
 
 // ===================================================================
-// 🚀 VENDOR DASHBOARD INTEGRATION ROUTES (Swagger Documented)
+// 🚀 VENDOR & CUSTOMER DASHBOARD INTEGRATION ROUTES
 // ===================================================================
 
-// 2. Get Vendor Specific Bookings (Vendor Dashboard Tab 2 ke liye data source)
+// 2. Get Vendor Specific Bookings (Vendor Dashboard)
 // #swagger.tags = ['Bookings']
-router.get('/vendor/:vendorId', verifyToken, (req, res, next) => {
-    /* #swagger.description = 'Vendor dashboard par uski specific bookings load karne ke liye' */
-    getVendorBookings(req, res, next);
-});
+// #swagger.description = 'Vendor dashboard par uski specific bookings load karne ke liye'
+router.get('/vendor/:vendorId', protect, getVendorBookings);
 
-// 3. Update Booking Status Route (Dashboard Accept/Reject Dynamic Controls)
+// 3. Customer Dashboard Route (Fetch Logged-in Customer Active Bookings)
 // #swagger.tags = ['Bookings']
-router.put('/:id/status', verifyToken, (req, res, next) => {
-    /* #swagger.requestBody = {
-            required: true,
-            content: {
-                "application/json": {
-                    schema: {
-                        $status: "accepted"
-                    }
+// #swagger.description = 'Customer dashboard par personal active bookings fetch karne ke liye'
+router.get('/customer/my-bookings', protect, getCustomerBookings);
+
+// 4. Update Booking Status Route (Vendor Accept/Reject Actions)
+// #swagger.tags = ['Bookings']
+router.patch('/:id/status', protect, updateBookingStatus);
+/* #swagger.requestBody = {
+        required: true,
+        content: {
+            "application/json": {
+                schema: {
+                    $status: "accepted"
                 }
             }
-        } 
-    */
-    updateBookingStatus(req, res, next);
-});
-
-// ===================================================================
-// 🚀 TASK 5 NEW: CUSTOMER DASHBOARD ROUTE
-// ===================================================================
-// #swagger.tags = ['Bookings']
-router.get('/customer/my-bookings', verifyToken, (req, res, next) => {
-    /* #swagger.description = 'Customer dashboard par personal active bookings fetch karne ke liye' */
-    getCustomerBookings(req, res, next);
-});
+        }
+    } 
+*/
 
 module.exports = router;

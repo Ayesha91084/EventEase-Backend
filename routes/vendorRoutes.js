@@ -1,49 +1,48 @@
 const express = require('express');
 const router = express.Router();
 
-// 1. Multer Middleware Import (Naya Memory Storage Middleware)
+// 1. Multer Middleware (Cloudinary Memory Storage Buffer)
 const upload = require('../middleware/multer');
 
-// 2. Controllers Import
-const vendorController = require('../controllers/vendorController') || {};
-const registerVendor = vendorController.registerVendor || ((req, res) => res.send("Registration processed"));
-const updateVendorLocation = vendorController.updateVendorLocation || vendorController.updateLocation || ((req, res) => res.send("Location updated"));
-const searchVendorsByLocation = vendorController.searchVendorsByLocation || ((req, res) => res.send("Search processed"));
+// 2. Controllers Import (Clean Destructuring)
+const {
+    registerVendor,
+    updateVendorLocation,
+    searchVendorsByLocation,
+    uploadProfilePicture,
+    getAllVendors,
+    getVendorById
+} = require('../controllers/vendorController');
 
-// 🚀 NEW: Profile Picture Upload Controller Import
-const uploadProfilePicture = vendorController.uploadProfilePicture || ((req, res) => res.send("Profile picture upload processed"));
-
-// 3. Middleware Safe Import
-const authMiddleware = require('../middleware/authMiddleware') || {};
-const verifyToken = authMiddleware.verifyToken || authMiddleware.protect || authMiddleware.checkAuth || ((req, res, next) => next());
-
-// ==========================================
-// 🛠️ VENDOR ROUTES DEFINITION
-// ==========================================
+// 3. Authentication & Role Authorization Middleware
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 // #swagger.tags = ['Vendors']
-// Route: Vendor register kare aur documents upload kare
-router.post('/register', upload.array('documents', 5), registerVendor);
-
-// #swagger.tags = ['Vendors']
-// Route: OpenStreetMap Coordinates Update
-router.put('/update-location', verifyToken, updateVendorLocation);
 
 // ==========================================
-// 🚀 SEARCH VENDORS BY LOCATION ROUTE
+// 🌐 PUBLIC VENDOR SEARCH & DISCOVERY ROUTES
 // ==========================================
-// #swagger.tags = ['Vendors']
-// Route: Location base par vendors filter/search karne ke liye
-router.get('/search', (req, res, next) => {
-    /* #swagger.description = 'City name ya coordinates base par vendors ko dynamically search karne ke liye endpoint' */
-    searchVendorsByLocation(req, res, next);
-});
+
+// 1. Public Search Vendors (By OpenStreetMap Coordinates, City, or Name)
+router.get('/search', searchVendorsByLocation);
+
+// 2. Public Route: Get All Verified Vendors (For Landing/Directory Page)
+router.get('/', getAllVendors);
+
+// 3. Public Route: Get Single Vendor Details by ID
+router.get('/:id', getVendorById);
 
 // ==========================================
-// 🚀 NEW: PROFILE PICTURE UPLOAD ROUTE
+// 🔐 PROTECTED VENDOR MANAGEMENT ROUTES
 // ==========================================
-// #swagger.tags = ['Vendors']
-// Route: Profile picture update karne ke liye (PUT /api/vendors/profile/upload-image/:vendorId)
-router.put('/profile/upload-image/:vendorId', upload.single('profilePicture'), uploadProfilePicture);
+
+// 4. Vendor Onboarding: Register Profile & Upload Verification CNIC/Documents (Max 5 files)
+router.post('/register', protect, upload.array('documents', 5), registerVendor);
+
+// 5. OpenStreetMap Location Update (Coordinates Sync)
+router.put('/update-location', protect, authorize('vendor'), updateVendorLocation);
+
+// 6. Vendor Profile Picture Upload (Cloudinary Single File Upload)
+router.put('/profile/upload-image', protect, authorize('vendor'), upload.single('profilePicture'), uploadProfilePicture);
 
 module.exports = router;

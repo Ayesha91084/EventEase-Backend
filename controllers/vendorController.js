@@ -44,16 +44,21 @@ const registerVendor = async (req, res) => {
     try {
         const { userId, user, businessName, businessType, country, state, city, address, description, documents } = req.body;
         
-        // Priority check for auth token id or body user id
         const targetUserId = req.user?.id || req.user?._id || userId || user || req.body.user;
 
         if (!targetUserId) {
             return res.status(400).json({ success: false, message: "User ID is required for vendor registration." });
         }
 
+        // Prevent Duplicate Vendor Profiles
+        const existingVendor = await Vendor.findOne({ userId: targetUserId });
+        if (existingVendor) {
+            return res.status(400).json({ success: false, message: "Vendor profile already exists for this account." });
+        }
+
         let documentUrls = [];
 
-        // Handle uploaded file buffers via Multer
+        // Upload documents/CNIC via Cloudinary
         if (req.files && req.files.length > 0) {
             for (const file of req.files) {
                 const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
@@ -79,11 +84,11 @@ const registerVendor = async (req, res) => {
             address: address || "Main Bazaar" 
         };
 
-        // Update User Role and verification status
+        // Update User Role to Vendor
         const userCheck = await User.findById(targetUserId);
         if (userCheck) {
             userCheck.role = 'vendor';
-            userCheck.isVerified = false; // Requires Admin Approval
+            userCheck.isVerified = false; // Admin Approval Required
             await userCheck.save();
         }
 
@@ -135,7 +140,7 @@ const updateVendorLocation = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Coordinates maps generated!",
+            message: "Coordinates maps generated successfully!",
             data: updatedProfile ? updatedProfile.location : { latitude, longitude }
         });
     } catch (error) {
@@ -171,7 +176,7 @@ const searchVendorsByLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 5. CLOUDINARY PORTFOLIO MULTI-MEDIA UPLOAD (MAX 5 IMAGES, MAX 3 VIDEOS)
+// 🚀 5. PORTFOLIO MULTI-MEDIA UPLOAD (MAX 5 IMAGES, MAX 3 VIDEOS)
 // ===================================================================
 const uploadPortfolioMedia = async (req, res) => {
     try {
@@ -186,26 +191,38 @@ const uploadPortfolioMedia = async (req, res) => {
             return res.status(400).json({ success: false, message: "No media files uploaded" });
         }
 
-        let images = [...vendor.portfolioImages];
-        let videos = [...vendor.portfolioVideos];
+        let images = vendor.portfolioImages || [];
+        let videos = vendor.portfolioVideos || [];
+
+        // Pre-validation count check
+        let newImagesCount = req.files.filter(f => !f.mimetype.startsWith('video')).length;
+        let newVideosCount = req.files.filter(f => f.mimetype.startsWith('video')).length;
+
+        if (images.length + newImagesCount > 5) {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Portfolio limit exceeded: Max 5 images allowed. (Currently have ${images.length})` 
+            });
+        }
+
+        if (videos.length + newVideosCount > 3) {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Portfolio limit exceeded: Max 3 videos allowed. (Currently have ${videos.length})` 
+            });
+        }
 
         for (const file of req.files) {
             const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
             const isVideo = file.mimetype.startsWith('video');
 
             if (isVideo) {
-                if (videos.length >= 3) {
-                    return res.status(400).json({ success: false, message: "Maximum limit reached: Only 3 videos allowed per portfolio." });
-                }
                 const uploadRes = await cloudinary.uploader.upload(fileBase64, {
                     resource_type: 'video',
                     folder: 'EventEase/vendors/portfolio/videos',
                 });
                 videos.push(uploadRes.secure_url);
             } else {
-                if (images.length >= 5) {
-                    return res.status(400).json({ success: false, message: "Maximum limit reached: Only 5 images allowed per portfolio." });
-                }
                 const uploadRes = await cloudinary.uploader.upload(fileBase64, {
                     folder: 'EventEase/vendors/portfolio/images',
                 });
@@ -225,6 +242,7 @@ const uploadPortfolioMedia = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("Portfolio Upload Error:", error);
         return res.status(500).json({ success: false, message: "Media upload failed", error: error.message });
     }
 };

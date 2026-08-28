@@ -3,25 +3,30 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware'); 
 
-// POST /api/auth/google
-if (authController.googleLogin) {
-    router.post('/google', authController.googleLogin);
-}
+// ==========================================
+// 🛠️ AUTHENTICATION & SOCIAL LOGIN ROUTES
+// ==========================================
 
-// POST /api/auth/signup
+// Standard Manual Auth
 router.post('/signup', authController.signup);
-
-// POST /api/auth/verify-otp
+router.post('/login', authController.login);
 router.post('/verify-otp', authController.verifyOTP);
 
-// POST /api/auth/login
-router.post('/login', authController.login);
+// Google OAuth Login
+router.post('/google', authController.googleLogin);
 
-// Password Management
-if (authController.forgotPassword) router.post('/forgot-password', authController.forgotPassword);
-if (authController.resetPassword) router.post('/reset-password', authController.resetPassword);
+// Password Management Workflow
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 
-// PUT /api/auth/profile/update
-if (authController.updateProfile) router.put('/profile/update', protect, authController.updateProfile); 
+// ==========================================
+// 🔐 PROTECTED USER PROFILE ROUTES
+// ==========================================
+
+// Get Current Logged-in User Profile
+router.get('/me', protect, authController.getMe);
+
+// Update Profile Details
+router.put('/profile/update', protect, authController.updateProfile);
 
 module.exports = router;

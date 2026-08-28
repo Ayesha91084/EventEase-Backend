@@ -3,27 +3,31 @@ const mongoose = require('mongoose');
 const serviceSchema = new mongoose.Schema({
     vendorId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'VendorProfile', // Fixed: Linked to VendorProfile model
         required: true
     },
     title: {
         type: String,
-        required: true
+        required: [true, 'Service title is required'],
+        trim: true
     },
     description: {
         type: String,
-        required: true
+        required: [true, 'Service description is required'],
+        trim: true
     },
     price: {
         type: Number,
-        required: true
+        required: [true, 'Service base price is required'],
+        min: [0, 'Price cannot be negative']
     },
     category: {
-        type: String, // e.g., "Wedding", "Catering"
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category', // Fixed: Linked to Category model reference
         required: true
     },
     images: [{
-        type: String // Portfolio images array from Cloudinary
+        type: String // Portfolio Cloudinary image URLs
     }],
     isActive: {
         type: Boolean,
@@ -31,7 +35,9 @@ const serviceSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-serviceSchema.index({ categoryId: 1 }); // Category wise search ke liye
-serviceSchema.index({ price: 1 }); // Price range filter ke liye
+// 🚀 Fast Query Indexing (Fixed Index Mismatch)
+serviceSchema.index({ category: 1 }); // Category filter fast query
+serviceSchema.index({ price: 1 });    // Price sorting filter
+serviceSchema.index({ vendorId: 1 }); // Vendor specific services lookup
 
 module.exports = mongoose.model('Service', serviceSchema);

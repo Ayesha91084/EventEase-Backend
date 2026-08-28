@@ -1,12 +1,24 @@
 const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
-    customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    customer: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User', 
+        required: true 
+    },
+    // Fix: Reference changed to VendorProfile model
+    vendorId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'VendorProfile', 
+        required: true 
+    },
     packageDetails: {
         packageName: { type: String, required: true },
         basePrice: { type: Number, required: true },
-        extras: { type: Array, default: [] },
+        extras: [{ 
+            name: { type: String },
+            price: { type: Number, default: 0 }
+        }],
         perHead: { type: Boolean, default: false },
         guestCount: { type: Number, default: 1 },
     },
@@ -18,8 +30,8 @@ const bookingSchema = new mongoose.Schema({
     },
     totalAmount: { type: Number, required: true },
     
-    // 🚀 TASK 6: Dynamic Admin Commission & Vendor Payout Fields
-    commissionRate: { type: Number, default: 10 }, // 10% Default Platform Fee
+    // 🚀 Task 6: Dynamic Admin Commission & Vendor Payout Fields
+    commissionRate: { type: Number, default: 10 }, // Default 10% Platform Fee
     adminCommission: { type: Number, default: 0 },
     vendorPayout: { type: Number, default: 0 },
     
@@ -30,6 +42,15 @@ const bookingSchema = new mongoose.Schema({
     },
     paymentIntentId: { type: String, default: "" }
 }, { timestamps: true });
+
+// Auto-calculate Commission & Payout before saving document
+bookingSchema.pre('save', function (next) {
+    if (this.totalAmount) {
+        this.adminCommission = (this.totalAmount * this.commissionRate) / 100;
+        this.vendorPayout = this.totalAmount - this.adminCommission;
+    }
+    next();
+});
 
 bookingSchema.index({ customer: 1 });
 bookingSchema.index({ vendorId: 1 });

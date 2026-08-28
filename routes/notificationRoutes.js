@@ -1,35 +1,33 @@
 const express = require('express');
 const router = express.Router();
 
-// Safe Controller Method Fallbacks
-const notificationController = require('../controllers/notificationController') || {};
+// 1. Direct Controllers Import
+const { 
+    createNotification, 
+    getUserNotifications, 
+    markAsRead, 
+    sendEmailNotification 
+} = require('../controllers/notificationController');
 
-const createNotification = notificationController.createNotification || ((req, res) => {
-    res.status(200).json({ success: true, message: "Notification logged to DB." });
-});
-
-const getUserNotifications = notificationController.getUserNotifications || ((req, res) => {
-    res.status(200).json({ 
-        success: true, 
-        notifications: [
-            { id: 1, title: "Booking Confirmed", message: "Your booking deposit payment was verified.", date: new Date() }
-        ] 
-    });
-});
-
-const sendEmailNotification = notificationController.sendEmailNotification || ((req, res) => {
-    res.status(200).json({ success: true, message: "Notification email sent." });
-});
+// 2. Auth Middleware Import (Security Layer)
+const { protect } = require('../middleware/authMiddleware');
 
 // #swagger.tags = ['Notifications']
 
-// DB me Notification Store karne ka endpoint
-router.post('/create', createNotification);
+// ==========================================
+// 🛠️ NOTIFICATION ROUTES DEFINITION
+// ==========================================
 
-// User ki DB wali Notification lene ka endpoint
-router.get('/user/:userId', getUserNotifications);
+// 1. Logged-in User ke In-App Notifications fetch karna
+router.get('/my-notifications', protect, getUserNotifications);
 
-// Email bhejney ka endpoint
-router.post('/send-email', sendEmailNotification);
+// 2. Admin ya System Services ke through Notification DB mein save karna
+router.post('/create', protect, createNotification);
+
+// 3. Email Notification Dispatch API
+router.post('/send-email', protect, sendEmailNotification);
+
+// 4. Mark Single Notification as Read (Red Badge Clear karne ke liye)
+router.patch('/:id/read', protect, markAsRead);
 
 module.exports = router;

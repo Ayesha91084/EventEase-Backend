@@ -1,17 +1,21 @@
 const nodemailer = require('nodemailer');
+const Notification = require('../models/Notification'); // DB Persistence Schema
 
 // 🚀 REAL GMAIL SMTP TRANSPORTER SETUP
 const transporter = nodemailer.createTransport({
+    service: 'gmail',
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: process.env.EMAIL_PORT || 465,
-    secure: true, // Port 465 ke liye SSL enable karta hai
+    secure: true, 
     auth: {
-        user: process.env.EMAIL_USER,
+        user: process.env.EMAIL_USER || "fyp20222026@gmail.com",
         pass: process.env.EMAIL_PASS
     }
 });
 
-// Real Email Sender (OTP, Booking Notifications & Emails)
+// ==========================================
+// 1. REAL EMAIL SENDER (OTP & Booking Notifications)
+// ==========================================
 const sendEmailNotification = async (req, res) => {
     try {
         const { toEmail, subject, textMessage } = req.body;
@@ -20,9 +24,11 @@ const sendEmailNotification = async (req, res) => {
             return res.status(400).json({ success: false, message: "Recipient email (toEmail) is required." });
         }
 
+        const senderEmail = process.env.EMAIL_USER || "fyp20222026@gmail.com";
+
         const mailOptions = {
-            from: `"EventEase Official" <${process.env.EMAIL_USER}>`,
-            to: toEmail, // Real recipient email address
+            from: `"EventEase Official" <${senderEmail}>`,
+            to: toEmail,
             subject: subject || "EventEase Real-Time Notification",
             text: textMessage || "Aap ki EventEase booking/account activity ki notification.",
             html: `<div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
@@ -48,17 +54,54 @@ const sendEmailNotification = async (req, res) => {
     }
 };
 
+// ==========================================
+// 2. CREATE IN-APP NOTIFICATION (DB Save)
+// ==========================================
 const createNotification = async (req, res) => {
-    res.status(200).json({ success: true, message: "Notification logged to DB." });
+    try {
+        const { userId, title, message, type } = req.body;
+
+        if (!userId || !title || !message) {
+            return res.status(400).json({ success: false, message: "Missing required fields for notification." });
+        }
+
+        const newNotification = new Notification({
+            user: userId,
+            title,
+            message,
+            type: type || 'general',
+            createdAt: new Date()
+        });
+
+        await newNotification.save();
+
+        res.status(201).json({ success: true, message: "Notification logged to DB.", notification: newNotification });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
 };
 
+// ==========================================
+// 3. GET USER IN-APP NOTIFICATIONS
+// ==========================================
 const getUserNotifications = async (req, res) => {
-    res.status(200).json({
-        success: true,
-        notifications: [
-            { id: 1, title: "Booking Confirmed", message: "Your booking deposit payment was verified.", date: new Date() }
-        ]
-    });
+    try {
+        const userId = req.user ? (req.user.id || req.user._id) : req.params.userId;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "User ID is required." });
+        }
+
+        const notifications = await Notification.find({ user: userId }).sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: notifications.length,
+            notifications
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
 };
 
 module.exports = {

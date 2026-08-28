@@ -1,22 +1,22 @@
 const Booking = require('../models/Booking');
 
-// @desc     Create a new booking
-// @route    POST /api/bookings/book
-// @access   Private (Customer Only)
+// ==========================================
+// 1. CREATE BOOKING API (Customer Only)
+// ==========================================
 const createBooking = async (req, res) => {
     try {
-        console.log("Postman se aya hua data:", req.body);
+        console.log("Postman / Frontend Data:", req.body);
 
         const { vendorId, eventDate, totalAmount, packageDetails } = req.body;
         
-        // Logged-in user ki ID access
+        // Logged-in user authentication check
         const customerId = req.user ? (req.user.id || req.user._id) : null; 
         
         if (!customerId) {
             return res.status(401).json({ success: false, message: "Unauthorized! Please login first." });
         }
 
-        // Validation check
+        // Required fields validation
         if (!vendorId || !eventDate || !totalAmount || !packageDetails) {
             return res.status(400).json({
                 success: false,
@@ -25,13 +25,16 @@ const createBooking = async (req, res) => {
             });
         }
 
-        // ==========================================
-        // 🔒 PAST DATES BLOCKING LOGIC (Asma's Task)
-        // ==========================================
+        // ------------------------------------------
+        // 🔒 1. Past Dates Validation
+        // ------------------------------------------
         const today = new Date();
         today.setHours(0, 0, 0, 0); 
 
         const selectedDate = new Date(eventDate);
+        if (isNaN(selectedDate.getTime())) {
+            return res.status(400).json({ success: false, message: "Invalid date format provided." });
+        }
 
         if (selectedDate < today) {
             return res.status(400).json({
@@ -40,12 +43,18 @@ const createBooking = async (req, res) => {
             });
         }
 
-        // ===================================================================
-        // 🔒 NEW: OVERLAPPING BOOKING PROTECTION (Documentation Flow Page 106)
-        // ===================================================================
+        // ------------------------------------------
+        // 🔒 2. Overlapping Booking Protection (Full Day Range Match)
+        // ------------------------------------------
+        const startOfDay = new Date(selectedDate);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(selectedDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
         const existingBooking = await Booking.findOne({
             vendorId: vendorId,
-            eventDate: eventDate,
+            eventDate: { $gte: startOfDay, $lte: endOfDay },
             status: { $in: ['pending', 'accepted'] } 
         });
 
@@ -55,15 +64,14 @@ const createBooking = async (req, res) => {
                 message: "Date Unavailable: Yeh vendor is tareekh par pehle se booked hai!"
             });
         }
-        // ==========================================
 
-        // Naya booking record create karein
+        // Create new booking record
         const newBooking = new Booking({
             customer: customerId,
             vendorId: vendorId,
             packageDetails: packageDetails,
-            eventDate,
-            totalAmount,
+            eventDate: selectedDate,
+            totalAmount: Number(totalAmount),
             status: 'pending',
             paymentStatus: 'pending'
         });
@@ -82,21 +90,25 @@ const createBooking = async (req, res) => {
     }
 };
 
-// ===================================================================
-// 🚀 GET VENDOR SPECIFIC BOOKINGS (For Vendor Dashboard Tab 2 & Earnings)
-// ===================================================================
+// ==========================================
+// 2. GET VENDOR SPECIFIC BOOKINGS & EARNINGS
+// ==========================================
 const getVendorBookings = async (req, res) => {
     try {
         const vendorId = req.params.vendorId || (req.user ? (req.user.id || req.user._id) : null);
         
+        if (!vendorId) {
+            return res.status(400).json({ success: false, message: "Vendor ID is missing." });
+        }
+
         const bookings = await Booking.find({ vendorId: vendorId })
             .populate('customer', 'name email phone profileImage')
             .sort({ createdAt: -1 });
 
-        // Calculate total earnings from accepted bookings
+        // Calculate total earnings from accepted/completed bookings
         const totalEarnings = bookings
             .filter(b => b.status === 'accepted' || b.status === 'done')
-            .reduce((sum, item) => sum + (item.totalAmount || 0), 0);
+            .reduce((sum, item) => sum + (Number(item.totalAmount) || 0), 0);
         
         res.status(200).json({
             success: true,
@@ -109,16 +121,16 @@ const getVendorBookings = async (req, res) => {
     }
 };
 
-// ===================================================================
-// 🚀 UPDATE BOOKING STATUS (Vendor Dashboard Accept/Reject Action)
-// ===================================================================
+// ==========================================
+// 3. UPDATE BOOKING STATUS (Vendor Accept/Reject)
+// ==========================================
 const updateBookingStatus = async (req, res) => {
     try {
         const id = req.params.id || req.params.bookingId;
-        const { status } = req.body; // 'accepted' ya 'rejected' frontend control panel se
+        const { status } = req.body; 
 
         if (!['accepted', 'rejected', 'done', 'pending'].includes(status)) {
-            return res.status(400).json({ success: false, message: "Invalid status value" });
+            return res.status(400).json({ success: false, message: "Invalid status value." });
         }
 
         const updatedBooking = await Booking.findByIdAndUpdate(
@@ -128,12 +140,12 @@ const updateBookingStatus = async (req, res) => {
         );
 
         if (!updatedBooking) {
-            return res.status(404).json({ success: false, message: "Booking record not found" });
+            return res.status(404).json({ success: false, message: "Booking record not found." });
         }
 
         res.status(200).json({ 
             success: true, 
-            message: `Booking status has been updated to ${status} successfully!`, 
+            message: `Booking status has been updated to '${status}' successfully!`, 
             data: updatedBooking 
         });
     } catch (error) {
@@ -141,9 +153,9 @@ const updateBookingStatus = async (req, res) => {
     }
 };
 
-// ===================================================================
-// 🚀 TASK 5 NEW: GET CUSTOMER DASHBOARD BOOKINGS (Customer View Only)
-// ===================================================================
+// ==========================================
+// 4. GET CUSTOMER DASHBOARD BOOKINGS
+// ==========================================
 const getCustomerBookings = async (req, res) => {
     try {
         const customerId = req.user ? (req.user.id || req.user._id) : req.params.customerId;

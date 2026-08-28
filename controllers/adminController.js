@@ -57,16 +57,18 @@ const getDashboardSummary = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 TASK 3: GET ALL PENDING VENDORS (User + VendorProfile Lookup)
+// 🚀 FIXED: GET ALL PENDING VENDORS (Populates User + Vendor Documents)
 // ===================================================================
 const getPendingVendors = async (req, res) => {
     try {
+        const pendingProfiles = await VendorProfile.find({ isVerified: false })
+            .populate('userId', 'name email role isVerified');
+
         const pendingUsers = await User.find({ role: 'vendor', isVerified: false }).select('-password');
-        const pendingProfiles = await VendorProfile.find({ isVerified: false });
 
         res.status(200).json({ 
             success: true, 
-            count: pendingUsers.length,
+            count: pendingProfiles.length,
             users: pendingUsers,
             profiles: pendingProfiles
         });
@@ -76,7 +78,7 @@ const getPendingVendors = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 TASK 3: APPROVE OR REJECT VENDOR PROFILES (Dual Table Sync)
+// 🚀 APPROVE OR REJECT VENDOR PROFILES (Dual Table Sync)
 // ===================================================================
 const verifyVendor = async (req, res) => {
     try {

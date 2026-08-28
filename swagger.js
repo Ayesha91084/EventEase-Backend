@@ -3,23 +3,41 @@ const swaggerAutogen = require('swagger-autogen')();
 const doc = {
   info: {
     title: 'EventEase API Documentation',
-    description: 'Multi-Vendor Event Management System API Documentation (Auto-Generated)',
+    description: 'Multi-Vendor Event Management System API Documentation',
+    version: '1.0.0'
   },
   host: 'localhost:5000',
   schemes: ['http', 'https'],
-  // 👇 Yeh tags lagane se auto-grouping ho jaye gi routes ke mutabiq
+  
+  // 🔐 Bearer Security Definition
+  securityDefinitions: {
+    bearerAuth: {
+      type: 'apiKey',
+      name: 'Authorization',
+      in: 'header',
+      description: 'Enter your JWT token in the format: Bearer <your_token>'
+    }
+  },
+  security: [
+    {
+      bearerAuth: []
+    }
+  ],
+
   tags: [
-    { name: 'Authentication', description: 'User login, signup, and token verification' },
-    { name: 'Bookings', description: 'Event booking and scheduling endpoints' },
-    { name: 'Payments', description: 'Stripe gateway integration logs' },
-    { name: 'Admin', description: 'System telemetry and management controls' },
-    { name: 'Vendors', description: 'Vendor profiles, onboarding, and locations' },
-    { name: 'Chat', description: 'Real-time communication logs' },
-    { name: 'Ratings & Feedback', description: 'Vendor review management' }
+    { name: 'Authentication', description: 'User login and signup' },
+    { name: 'Bookings', description: 'Event booking endpoints' },
+    { name: 'Payments', description: 'Stripe gateway integration' },
+    { name: 'Admin', description: 'Management controls' },
+    { name: 'Vendors', description: 'Vendor profiles and locations' },
+    { name: 'Chat', description: 'Real-time communication' },
+    { name: 'Ratings & Feedback', description: 'Vendor reviews' }
   ]
 };
 
 const outputFile = './swagger-output.json';
 const endpointsFiles = ['./server.js'];
 
-swaggerAutogen(outputFile, endpointsFiles, doc);
+swaggerAutogen(outputFile, endpointsFiles, doc).then(() => {
+  console.log("⚡ Swagger JSON file refreshed with Auth Support!");
+});
