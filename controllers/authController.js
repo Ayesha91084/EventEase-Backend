@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
 // ==========================================
 // 1. SIGNUP API (For Public Customers/Vendors)
 // ==========================================
-exports.signup = async (req, res) => {
+const signup = async (req, res) => {
     try {
         const { name, email, password, role, city, address, description, phone } = req.body;
 
@@ -44,7 +44,7 @@ exports.signup = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
         if (!user) {
             user = new User({
@@ -95,7 +95,7 @@ exports.signup = async (req, res) => {
 // ==========================================
 // 2. VERIFY OTP API
 // ==========================================
-exports.verifyOTP = async (req, res) => {
+const verifyOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
 
@@ -140,30 +140,26 @@ exports.verifyOTP = async (req, res) => {
 // ==========================================
 // 3. SECURE LOGIN API (DB Bcrypt Verification)
 // ==========================================
-exports.login = async (req, res) => {
+const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // 1. Database mein email search karo
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ message: "Invalid Credentials" });
         }
 
-        // 2. Verified check (Admins are pre-verified)
         if (!user.isVerified && user.role !== 'admin') {
             return res.status(403).json({ 
                 message: "Email is not verified. Please verify your OTP first." 
             });
         }
 
-        // 3. Database Hashed Password Comparison (Bcrypt)
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: "Invalid Credentials" });
         }
 
-        // 4. JWT Token Generation
         const token = jwt.sign(
             { id: user._id, role: user.role }, 
             process.env.JWT_SECRET || 'secretKey', 
@@ -181,56 +177,24 @@ exports.login = async (req, res) => {
 };
 
 // ==========================================
-// 4. CREATE NEW SUB-ADMIN API (Only Main Admin Can Call)
+// 4. GET LOGGED-IN USER PROFILE (/me)
 // ==========================================
-exports.createSubAdmin = async (req, res) => {
+const getMe = async (req, res) => {
     try {
-        // Sirf main logged in Admin hi access kar sake
-        const requestingAdmin = await User.findById(req.user.id);
-        if (!requestingAdmin || requestingAdmin.role !== 'admin') {
-            return res.status(403).json({ message: "Access Denied: Only Super Admin can create new admin accounts." });
+        const user = await User.findById(req.user.id).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
         }
-
-        const { name, email, password, phone } = req.body;
-
-        if (!email || !password || !name) {
-            return res.status(400).json({ message: "Name, email, and password are required." });
-        }
-
-        let existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: "An account with this email already exists." });
-        }
-
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        const newAdmin = new User({
-            name,
-            email,
-            password: hashedPassword,
-            role: 'admin',
-            phone: phone || '',
-            isVerified: true
-        });
-
-        await newAdmin.save();
-
-        return res.status(201).json({
-            success: true,
-            message: "New Sub-Admin account created successfully!",
-            admin: { id: newAdmin._id, name: newAdmin.name, email: newAdmin.email, role: newAdmin.role }
-        });
-
+        res.status(200).json({ success: true, data: user });
     } catch (err) {
-        return res.status(500).json({ message: "Error creating admin account", error: err.message });
+        res.status(500).json({ message: "Server Error fetching profile", error: err.message });
     }
 };
 
 // ==========================================
 // 5. UPDATE PROFILE
 // ==========================================
-exports.updateProfile = async (req, res) => {
+const updateProfile = async (req, res) => {
     try {
         const { name, email, phone, profileImage } = req.body;
         const updatedUser = await User.findByIdAndUpdate(
@@ -248,7 +212,7 @@ exports.updateProfile = async (req, res) => {
 // ==========================================
 // 6. FORGOT & RESET PASSWORD
 // ==========================================
-exports.forgotPassword = async (req, res) => {
+const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) return res.status(400).json({ message: "Please provide an email address." });
@@ -279,7 +243,7 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-exports.resetPassword = async (req, res) => {
+const resetPassword = async (req, res) => {
     try {
         const { email, newPassword } = req.body;
         const user = await User.findOne({ email });
@@ -303,7 +267,7 @@ exports.resetPassword = async (req, res) => {
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
 const googleOAuthClient = new OAuth2Client(CLIENT_ID);
 
-exports.googleAuth = async (req, res) => {
+const googleAuth = async (req, res) => {
     try {
         const token = req.body.token || req.body.credential;
         const selectedRole = req.body.role;
@@ -358,4 +322,15 @@ exports.googleAuth = async (req, res) => {
     }
 };
 
-exports.googleLogin = exports.googleAuth;
+// Complete Explicit Export Object
+module.exports = {
+    signup,
+    verifyOTP,
+    login,
+    getMe,
+    updateProfile,
+    forgotPassword,
+    resetPassword,
+    googleAuth,
+    googleLogin: googleAuth
+};
