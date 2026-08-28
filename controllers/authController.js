@@ -318,6 +318,7 @@ const googleAuth = async (req, res) => {
         });
 
     } catch (err) {
+        console.error("GOOGLE AUTH FULL ERROR:", err);
         return res.status(400).json({ success: false, message: "Google Auth Failed", error: err.message });
     }
 };
