@@ -57,11 +57,10 @@ userSchema.index({ role: 1 });
 userSchema.index({ googleId: 1 }, { sparse: true }); // Allows multiple null values safely
 
 // 🔐 Password Hashing Pre-Save Hook
-userSchema.pre('save', async function(next) {
-    if (!this.isModified('password') || !this.password) return next();
+userSchema.pre('save', async function() {
+    if (!this.isModified('password') || !this.password) return;
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    next();
 });
 
 // 🔓 Method to compare password during Login
