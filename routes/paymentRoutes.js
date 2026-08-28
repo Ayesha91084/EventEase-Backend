@@ -1,33 +1,27 @@
 const express = require('express');
 const router = express.Router();
 
-// 1. Controllers Import
-const { 
-    processPayment, 
-    createPaymentIntent, 
-    getPaymentHistory,
-    verifyPayment
+// 1. Controller Imports (Ensure names match controller exports)
+const {
+    createPaymentIntent,
+    handleWebhook,
+    getPaymentHistory
 } = require('../controllers/paymentController');
 
-// 2. Auth Middleware Import
+// 2. Middleware Imports
 const { protect } = require('../middleware/authMiddleware');
 
-// #swagger.tags = ['Payments']
-
 // ==========================================
-// 💳 PAYMENT ROUTES DEFINITION
+// 💳 PAYMENT ROUTES
 // ==========================================
 
-// 1. Create Payment Intent (Stripe/Payment Gateway Handshake)
+// Create payment intent
 router.post('/create-intent', protect, createPaymentIntent);
 
-// 2. Process / Confirm Payment Charge
-router.post('/charge', protect, processPayment);
+// Stripe / Payment Webhook
+router.post('/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
-// 3. Verify Transaction Status via Gateway Reference
-router.post('/verify', protect, verifyPayment);
-
-// 4. Fetch Logged-in User Transaction History
+// Get user payment history
 router.get('/history', protect, getPaymentHistory);
 
 module.exports = router;
