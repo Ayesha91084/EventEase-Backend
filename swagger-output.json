@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "EventEase API Documentation",
-    "description": "Multi-Vendor Event Management System API Documentation (Auto-Generated)",
+    "description": "Multi-Vendor Event Management System API Documentation",
     "version": "1.0.0"
   },
   "host": "localhost:5000",
@@ -10,295 +10,1051 @@
   "tags": [
     {
       "name": "Authentication",
-      "description": "User login, signup, and token verification"
+      "description": "User login and signup"
     },
     {
       "name": "Bookings",
-      "description": "Event booking and scheduling endpoints"
+      "description": "Event booking endpoints"
     },
     {
       "name": "Payments",
-      "description": "Stripe gateway integration logs"
+      "description": "Stripe gateway integration"
     },
     {
       "name": "Admin",
-      "description": "System telemetry and management controls"
+      "description": "Management controls"
     },
     {
       "name": "Vendors",
-      "description": "Vendor profiles, onboarding, and locations"
+      "description": "Vendor profiles and locations"
     },
     {
       "name": "Chat",
-      "description": "Real-time communication logs"
+      "description": "Real-time communication"
     },
     {
       "name": "Ratings & Feedback",
-      "description": "Vendor review management"
+      "description": "Vendor reviews"
     }
   ],
   "schemes": [
     "http",
     "https"
   ],
+  "securityDefinitions": {
+    "bearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Enter your JWT token in the format: Bearer <your_token>"
+    }
+  },
   "paths": {
     "/api/health-check": {
       "get": {
-        "tags": ["Admin"],
-        "description": "Check if the server is up and running",
+        "description": "",
         "responses": {
           "200": {
-            "description": "Server is healthy"
+            "description": "OK"
           }
         }
       }
     },
     "/": {
       "get": {
-        "tags": ["Admin"],
-        "description": "API Root Welcome Endpoint",
+        "description": "",
         "responses": {
           "200": {
-            "description": "Welcome to EventEase Backend API"
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/signup": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "example": "any"
+                },
+                "email": {
+                  "example": "any"
+                },
+                "password": {
+                  "example": "any"
+                },
+                "role": {
+                  "example": "any"
+                },
+                "city": {
+                  "example": "any"
+                },
+                "address": {
+                  "example": "any"
+                },
+                "description": {
+                  "example": "any"
+                },
+                "phone": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "example": "any"
+                },
+                "password": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/auth/verify-otp": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "example": "any"
+                },
+                "otp": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/auth/google": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "example": "any"
+                },
+                "newPassword": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/auth/profile/update": {
+      "put": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "example": "any"
+                },
+                "email": {
+                  "example": "any"
+                },
+                "phone": {
+                  "example": "any"
+                },
+                "profileImage": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/vendors/search": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "country",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/vendors/": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/vendors/{id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/vendors/register": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "example": "any"
+                },
+                "userId": {
+                  "example": "any"
+                },
+                "businessName": {
+                  "example": "any"
+                },
+                "businessType": {
+                  "example": "any"
+                },
+                "country": {
+                  "example": "any"
+                },
+                "state": {
+                  "example": "any"
+                },
+                "city": {
+                  "example": "any"
+                },
+                "address": {
+                  "example": "any"
+                },
+                "description": {
+                  "example": "any"
+                },
+                "documents": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/vendors/update-location": {
+      "put": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "latitude": {
+                  "example": "any"
+                },
+                "longitude": {
+                  "example": "any"
+                },
+                "vendorId": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/vendors/profile/upload-image": {
+      "put": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/vendors/{vendorId}/portfolio": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "vendorId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
           }
         }
       }
     },
     "/api/bookings/book": {
       "post": {
-        "tags": ["Bookings"],
-        "description": "Create a new event vendor booking",
+        "description": "",
         "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
           {
             "name": "body",
             "in": "body",
-            "required": true,
             "schema": {
               "type": "object",
-              "required": ["vendorId", "eventDate", "totalPrice"],
               "properties": {
-                "vendorId": { "type": "string", "example": "65f8a123abc456def7890123" },
-                "eventDate": { "type": "string", "example": "2026-07-15" },
-                "totalPrice": { "type": "number", "example": 25000 },
-                "status": { "type": "string", "example": "pending" }
+                "vendorId": {
+                  "example": "any"
+                },
+                "eventDate": {
+                  "example": "any"
+                },
+                "totalAmount": {
+                  "example": "any"
+                },
+                "packageDetails": {
+                  "example": "any"
+                }
               }
             }
           }
         ],
         "responses": {
-          "201": { "description": "Booking created successfully" },
-          "400": { "description": "Invalid input data" },
-          "401": { "description": "Unauthorized access token missing" }
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/bookings/vendor/{vendorId}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "vendorId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/bookings/customer/my-bookings": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/bookings/{id}/status": {
+      "patch": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
         }
       }
     },
     "/api/payments/charge": {
       "post": {
-        "tags": ["Payments"],
-        "description": "Process customer payment via gateway",
+        "description": "",
         "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
           {
             "name": "body",
             "in": "body",
-            "required": true,
             "schema": {
               "type": "object",
-              "required": ["amount", "currency", "bookingId"],
               "properties": {
-                "amount": { "type": "number", "example": 25000 },
-                "currency": { "type": "string", "example": "pkr" },
-                "bookingId": { "type": "string", "example": "65f8b789xyz" },
-                "paymentMethodId": { "type": "string", "example": "pm_card_visa" }
+                "bookingId": {
+                  "example": "any"
+                },
+                "token": {
+                  "example": "any"
+                },
+                "amount": {
+                  "example": "any"
+                }
               }
             }
           }
         ],
         "responses": {
-          "200": { "description": "Payment successfully charged" },
-          "400": { "description": "Payment process failed" }
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
         }
       }
     },
-    "/api/admin/summary": {
+    "/api/payments/create-intent": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "example": "any"
+                },
+                "currency": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/payments/history": {
       "get": {
-        "tags": ["Admin"],
-        "description": "Get complete system metrics summary",
-        "responses": {
-          "200": { "description": "Summary data returned successfully" }
-        }
-      }
-    },
-    "/api/admin/user/{id}": {
-      "delete": {
-        "tags": ["Admin"],
-        "description": "Delete user profile by their ID",
+        "description": "",
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "description": "The unique MongoDB ObjectID of user"
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
           }
         ],
         "responses": {
-          "200": { "description": "User deleted successfully" }
-        }
-      }
-    },
-    "/api/auth/signup": {
-      "post": {
-        "tags": ["Authentication"],
-        "description": "Register a new user to the national portal",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "required": ["name", "email", "password"],
-              "properties": {
-                "name": { "type": "string", "example": "Ayesha Bibi" },
-                "email": { "type": "string", "example": "ayesha@example.com" },
-                "password": { "type": "string", "example": "password123" },
-                "role": { "type": "string", "example": "client" }
-              }
-            }
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
           }
-        ],
-        "responses": {
-          "201": { "description": "Created successfully" },
-          "400": { "description": "User already exists or bad validation" }
         }
       }
     },
-    "/api/auth/login": {
-      "post": {
-        "tags": ["Authentication"],
-        "description": "Authenticate user and return access token",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "required": ["email", "password"],
-              "properties": {
-                "email": { "type": "string", "example": "ayesha@example.com" },
-                "password": { "type": "string", "example": "password123" }
-              }
-            }
+    "/api/admin/dashboard": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
           }
-        ],
-        "responses": {
-          "200": { "description": "Login successful" },
-          "400": { "description": "Invalid login credentials" }
         }
       }
     },
-    "/api/vendors/register": {
-      "post": {
-        "tags": ["Vendors"],
-        "description": "Multi-file document upload registration for local vendors",
+    "/api/admin/users": {
+      "get": {
+        "description": "",
         "responses": {
-          "200": { "description": "Vendor registration request submitted" }
+          "200": {
+            "description": "OK"
+          }
         }
       }
     },
-    "/api/vendors/update-location": {
+    "/api/admin/vendors": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/vendor/approve/{id}": {
       "put": {
-        "tags": ["Vendors"],
-        "description": "Update vendor's precise OpenStreetMap geographic location coordinates",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "required": ["latitude", "longitude"],
-              "properties": {
-                "latitude": { "type": "number", "example": 32.5731 },
-                "longitude": { "type": "number", "example": 73.4851 },
-                "address": { "type": "string", "example": "Mandi Bahauddin, Punjab" }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": { "description": "Coordinates updated successfully" }
-        }
-      }
-    },
-    "/api/chat/room/{id}": {
-      "get": {
-        "tags": ["Chat"],
-        "description": "Fetch real-time chat history for active session room",
+        "description": "",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "string",
-            "description": "Room link unique tracking identifier"
+            "type": "string"
           }
         ],
         "responses": {
-          "200": { "description": "Chat transcript logs retrieved" }
+          "200": {
+            "description": "OK"
+          }
         }
       }
     },
-    "/api/notifications/send-email": {
-      "post": {
-        "tags": ["Notifications"],
-        "description": "Dispatch direct transaction mail templates",
+    "/api/admin/bookings": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/chat/room/{room}": {
+      "get": {
+        "description": "",
         "parameters": [
+          {
+            "name": "room",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/chat/save": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
           {
             "name": "body",
             "in": "body",
-            "required": true,
             "schema": {
               "type": "object",
-              "required": ["recipientEmail", "subject", "messageBody"],
               "properties": {
-                "recipientEmail": { "type": "string", "example": "client@example.com" },
-                "subject": { "type": "string", "example": "EventEase Booking Confirmed" },
-                "messageBody": { "type": "string", "example": "Your transaction order has been successfully recorded." }
+                "room": {
+                  "example": "any"
+                },
+                "sender": {
+                  "example": "any"
+                },
+                "message": {
+                  "example": "any"
+                }
               }
             }
           }
         ],
         "responses": {
-          "200": { "description": "Notification dispatched successfully" }
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
         }
       }
     },
-    "/api/ratings/give-rating": {
+    "/api/ratings/": {
       "post": {
-        "tags": ["Ratings & Feedback"],
-        "description": "Submit stars score evaluation for a platform vendor service",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "required": ["vendorId", "rating"],
-              "properties": {
-                "vendorId": { "type": "string", "example": "65f8a123abc456def7890123" },
-                "rating": { "type": "integer", "example": 5 },
-                "comment": { "type": "string", "example": "Excellent service quality standard!" }
-              }
-            }
-          }
-        ],
+        "description": "",
         "responses": {
-          "200": { "description": "Feedback rating recorded successfully" }
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/ratings/vendor/{vendorId}": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/ratings/{id}": {
+      "delete": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/notifications/": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "patch": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/notifications/read-all": {
+      "patch": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
         }
       }
     }
-  }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
 }
