@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const { protect } = require('../middlewares/authMiddleware'); // Path verified to middlewares
+const { protect } = require('../middleware/authMiddleware'); // Path verified to middlewares
 
 // ==========================================
 // 🛠️ AUTHENTICATION & SOCIAL LOGIN ROUTES
