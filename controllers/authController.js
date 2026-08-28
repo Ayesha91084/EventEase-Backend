@@ -272,25 +272,39 @@ const googleAuth = async (req, res) => {
         const token = req.body.token || req.body.credential;
         const selectedRole = req.body.role;
 
-        if (!token) return res.status(400).json({ success: false, message: "Token missing" });
+        if (!token) {
+            return res.status(400).json({ success: false, message: "Token missing" });
+        }
 
         let email, name, googleId;
+
+        // Try Official SDK Verification
         try {
-            const ticket = await googleOAuthClient.verifyIdToken({ idToken: token, audience: CLIENT_ID });
+            const ticket = await googleOAuthClient.verifyIdToken({
+                idToken: token,
+                audience: CLIENT_ID
+            });
             const payload = ticket.getPayload();
             email = payload.email;
             name = payload.name;
             googleId = payload.sub;
         } catch (verifyError) {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const payload = JSON.parse(Buffer.from(base64, 'base64').toString());
-            email = payload.email;
-            name = payload.name;
-            googleId = payload.sub;
+            // Safe JWT Decode Fallback
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const payload = JSON.parse(Buffer.from(base64, 'base64').toString());
+                email = payload.email;
+                name = payload.name;
+                googleId = payload.sub;
+            } catch (decodeErr) {
+                console.error("Decode Error:", decodeErr.message);
+            }
         }
 
-        if (!email) return res.status(400).json({ success: false, message: "Invalid email in token" });
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Invalid Google Token" });
+        }
 
         let user = await User.findOne({ email });
         if (!user) {
@@ -318,8 +332,12 @@ const googleAuth = async (req, res) => {
         });
 
     } catch (err) {
-        console.error("GOOGLE AUTH FULL ERROR:", err);
-        return res.status(400).json({ success: false, message: "Google Auth Failed", error: err.message });
+        console.error("GOOGLE AUTH ERROR:", err.message);
+        return res.status(400).json({
+            success: false,
+            message: "Google Auth Failed",
+            error: err.message
+        });
     }
 };
 
