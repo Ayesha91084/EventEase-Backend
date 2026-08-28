@@ -176,7 +176,44 @@ const searchVendorsByLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 5. PORTFOLIO MULTI-MEDIA UPLOAD (MAX 5 IMAGES, MAX 3 VIDEOS)
+// 🚀 5. GET ALL VENDORS (PUBLIC)
+// ===================================================================
+const getAllVendors = async (req, res) => {
+    try {
+        const vendors = await Vendor.find({ isVerified: true }).populate('userId', 'name email');
+        return res.status(200).json({
+            success: true,
+            count: vendors.length,
+            vendors
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Error fetching vendors", error: error.message });
+    }
+};
+
+// ===================================================================
+// 🚀 6. GET VENDOR BY ID (PUBLIC)
+// ===================================================================
+const getVendorById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const vendor = await Vendor.findById(id).populate('userId', 'name email');
+
+        if (!vendor) {
+            return res.status(404).json({ success: false, message: "Vendor not found" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            vendor
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Error fetching vendor details", error: error.message });
+    }
+};
+
+// ===================================================================
+// 🚀 7. PORTFOLIO MULTI-MEDIA UPLOAD (MAX 5 IMAGES, MAX 3 VIDEOS)
 // ===================================================================
 const uploadPortfolioMedia = async (req, res) => {
     try {
@@ -194,7 +231,6 @@ const uploadPortfolioMedia = async (req, res) => {
         let images = vendor.portfolioImages || [];
         let videos = vendor.portfolioVideos || [];
 
-        // Pre-validation count check
         let newImagesCount = req.files.filter(f => !f.mimetype.startsWith('video')).length;
         let newVideosCount = req.files.filter(f => f.mimetype.startsWith('video')).length;
 
@@ -252,5 +288,7 @@ module.exports = {
   registerVendor, 
   updateVendorLocation, 
   searchVendorsByLocation,
+  getAllVendors,
+  getVendorById,
   uploadPortfolioMedia
 };

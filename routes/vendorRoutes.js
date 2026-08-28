@@ -11,7 +11,8 @@ const {
     searchVendorsByLocation,
     uploadProfilePicture,
     getAllVendors,
-    getVendorById
+    getVendorById,
+    uploadPortfolioMedia
 } = require('../controllers/vendorController');
 
 // 3. Authentication & Role Authorization Middleware
@@ -44,5 +45,8 @@ router.put('/update-location', protect, authorize('vendor'), updateVendorLocatio
 
 // 6. Vendor Profile Picture Upload (Cloudinary Single File Upload)
 router.put('/profile/upload-image', protect, authorize('vendor'), upload.single('profilePicture'), uploadProfilePicture);
+
+// 7. Vendor Portfolio Media Upload (Max 5 images, Max 3 videos)
+router.post('/:vendorId/portfolio', protect, authorize('vendor'), upload.array('media', 8), uploadPortfolioMedia);
 
 module.exports = router;
