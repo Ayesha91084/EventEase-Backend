@@ -1,37 +1,42 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// 1. Protect Middleware (JWT Verification)
 const protect = async (req, res, next) => {
     let token;
 
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
         try {
+            // Token extract karein
             token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+            // Token verify karein
+            const decoded = jwt.verify(
+                token, 
+                process.env.JWT_SECRET || 'secretKey'
+            );
+
+            // User fetch karke req.user me save karein
             req.user = await User.findById(decoded.id).select('-password');
-            return next();
+
+            if (!req.user) {
+                return res.status(401).json({ message: 'User not found' });
+            }
+
+            // Aage request pass karne ke liye next() call karna zaroori hai
+            return next(); 
+
         } catch (error) {
-            return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
+            console.error('Middleware Auth Error:', error.message);
+            return res.status(401).json({ message: 'Not authorized, token failed' });
         }
     }
 
     if (!token) {
-        return res.status(401).json({ success: false, message: 'Not authorized, no token' });
+        return res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
 
-// 2. Authorize Middleware (Role-Based Access Control)
-const authorize = (...roles) => {
-    return (req, res, next) => {
-        if (!req.user || !roles.includes(req.user.role)) {
-            return res.status(403).json({
-                success: false,
-                message: `User role '${req.user?.role}' is not authorized to access this route`
-            });
-        }
-        next();
-    };
-};
-
-module.exports = { protect, authorize };
+module.exports = { protect };
