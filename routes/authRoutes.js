@@ -1,32 +1,44 @@
 const express = require('express');
 const router = express.Router();
-const authController = require('../controllers/authController');
-const { protect } = require('../middleware/authMiddleware'); // Path verified to middlewares
+
+// Direct destructuring 
+const { 
+  signup, 
+  login, 
+  verifyOTP, 
+  googleAuth, 
+  forgotPassword, 
+  resetPassword, 
+  getMe, 
+  updateProfile 
+} = require('../controllers/authController');
+
+const { protect } = require('../middleware/authMiddleware');
 
 // ==========================================
 // 🛠️ AUTHENTICATION & SOCIAL LOGIN ROUTES
 // ==========================================
 
 // Standard Manual Auth
-router.post('/signup', authController.signup);
-router.post('/login', authController.login);
-router.post('/verify-otp', authController.verifyOTP);
+router.post('/signup', signup);
+router.post('/login', login);
+router.post('/verify-otp', verifyOTP);
 
 // Google OAuth Login
-router.post('/google', authController.googleLogin);
+router.post('/google', googleAuth);
 
 // Password Management Workflow
-router.post('/forgot-password', authController.forgotPassword);
-router.post('/reset-password', authController.resetPassword);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 // ==========================================
 // 🔐 PROTECTED USER PROFILE ROUTES
 // ==========================================
 
 // Get Current Logged-in User Profile
-router.get('/me', protect, authController.getMe);
+router.get('/me', protect, getMe);
 
 // Update Profile Details
-router.put('/profile/update', protect, authController.updateProfile);
+router.put('/profile/update', protect, updateProfile);
 
 module.exports = router;
