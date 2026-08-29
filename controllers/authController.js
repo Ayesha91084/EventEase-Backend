@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
 // ==========================================
 // 1. SIGNUP API (For Public Customers/Vendors)
 // ==========================================
-const signup = async (req, res) => {
+const signup = async (req, res, next) => {
     try {
         const { name, email, password, role, city, address, description, phone } = req.body;
 
@@ -31,20 +31,13 @@ const signup = async (req, res) => {
         }
 
         let assignedRole = role === 'vendor' ? 'vendor' : 'customer';
-        
-        // Strict Security: Public Signup se koi bhi Admin nahi ban sakta
-        if (role === 'admin') {
-            return res.status(403).json({ 
-                success: false,
-                message: "Security Alert: Admin role cannot be created via public signup." 
-            });
-        }
 
+        // Manual Hashing (Jab User.js mein pre-save hook na ho)
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
         if (!user) {
             user = new User({
@@ -70,20 +63,9 @@ const signup = async (req, res) => {
 
         await user.save();
 
-        try {
-            await transporter.sendMail({
-                from: `"EventEase" <${process.env.EMAIL_USER || "fyp20222026@gmail.com"}>`,
-                to: email,
-                subject: 'EventEase - Account Verification OTP',
-                html: `<h3>Your OTP code is: <b>${otp}</b></h3>`
-            });
-        } catch (mailErr) {
-            console.error("Nodemailer Mail Error:", mailErr.message);
-        }
-
         return res.status(201).json({ 
             success: true,
-            message: "Signup successful! OTP code has been sent to your email.",
+            message: "Signup successful! OTP code sent to your email.",
             email: user.email
         });
 
@@ -95,7 +77,7 @@ const signup = async (req, res) => {
 // ==========================================
 // 2. VERIFY OTP API
 // ==========================================
-const verifyOTP = async (req, res) => {
+const verifyOTP = async (req, res, next) => {
     try {
         const { email, otp } = req.body;
 
@@ -140,7 +122,7 @@ const verifyOTP = async (req, res) => {
 // ==========================================
 // 3. SECURE LOGIN API (DB Bcrypt Verification)
 // ==========================================
-const login = async (req, res) => {
+const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
@@ -179,7 +161,7 @@ const login = async (req, res) => {
 // ==========================================
 // 4. GET LOGGED-IN USER PROFILE (/me)
 // ==========================================
-const getMe = async (req, res) => {
+const getMe = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
         if (!user) {
@@ -194,7 +176,7 @@ const getMe = async (req, res) => {
 // ==========================================
 // 5. UPDATE PROFILE
 // ==========================================
-const updateProfile = async (req, res) => {
+const updateProfile = async (req, res, next) => {
     try {
         const { name, email, phone, profileImage } = req.body;
         const updatedUser = await User.findByIdAndUpdate(
@@ -212,7 +194,7 @@ const updateProfile = async (req, res) => {
 // ==========================================
 // 6. FORGOT & RESET PASSWORD
 // ==========================================
-const forgotPassword = async (req, res) => {
+const forgotPassword = async (req, res, next) => {
     try {
         const { email } = req.body;
         if (!email) return res.status(400).json({ message: "Please provide an email address." });
@@ -243,12 +225,13 @@ const forgotPassword = async (req, res) => {
     }
 };
 
-const resetPassword = async (req, res) => {
+const resetPassword = async (req, res, next) => {
     try {
         const { email, newPassword } = req.body;
         const user = await User.findOne({ email });
         if (!user) return res.status(404).json({ message: "User not found" });
 
+        // Password Hash (Bcrypt)
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(newPassword, salt);
         user.otp = undefined;
@@ -267,7 +250,7 @@ const resetPassword = async (req, res) => {
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
 const googleOAuthClient = new OAuth2Client(CLIENT_ID);
 
-const googleAuth = async (req, res) => {
+const googleAuth = async (req, res, next) => {
     try {
         const token = req.body.token || req.body.credential;
         const selectedRole = req.body.role;
@@ -278,7 +261,6 @@ const googleAuth = async (req, res) => {
 
         let email, name, googleId;
 
-        // Try Official SDK Verification
         try {
             const ticket = await googleOAuthClient.verifyIdToken({
                 idToken: token,
@@ -289,7 +271,6 @@ const googleAuth = async (req, res) => {
             name = payload.name;
             googleId = payload.sub;
         } catch (verifyError) {
-            // Safe JWT Decode Fallback
             try {
                 const base64Url = token.split('.')[1];
                 const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -341,7 +322,6 @@ const googleAuth = async (req, res) => {
     }
 };
 
-// Complete Explicit Export Object
 module.exports = {
     signup,
     verifyOTP,
