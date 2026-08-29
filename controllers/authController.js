@@ -91,8 +91,6 @@ const verifyOTP = async (req, res, next) => {
         }
 
         user.isVerified = true;
-        user.otp = null;
-        user.otpExpires = null;
         await user.save();
 
         const token = jwt.sign(
@@ -227,11 +225,16 @@ const forgotPassword = async (req, res, next) => {
 
 const resetPassword = async (req, res, next) => {
     try {
-        const { email, newPassword } = req.body;
+        const { email, otp, newPassword } = req.body;
+
         const user = await User.findOne({ email });
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // Password Hash (Bcrypt)
+        // OTP dobara verify karo — verifyOTP step ko bypass na hone do
+        if (!user.otp || user.otp !== otp || new Date() > user.otpExpires) {
+            return res.status(400).json({ message: "Invalid or expired reset session. Please verify OTP again." });
+        }
+
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(newPassword, salt);
         user.otp = undefined;
