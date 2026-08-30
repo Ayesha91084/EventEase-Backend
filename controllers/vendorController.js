@@ -288,6 +288,28 @@ const uploadPortfolioMedia = async (req, res) => {
         return res.status(500).json({ success: false, message: "Media upload failed", error: error.message });
     }
 };
+const Category = require('../models/Category');
+
+// Category fetch karne ke liye
+const getCategories = async (req, res) => {
+    try {
+        const categories = await Category.find({ isActive: true });
+        return res.status(200).json({ success: true, categories });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Category create karne ke liye
+const createCategory = async (req, res) => {
+    try {
+        const category = new Category(req.body);
+        await category.save();
+        return res.status(201).json({ success: true, category });
+    } catch (error) {
+        return res.status(400).json({ success: false, message: error.message });
+    }
+};
 
 module.exports = { 
   uploadProfilePicture, 

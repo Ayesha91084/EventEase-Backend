@@ -12,13 +12,25 @@ const {
     uploadProfilePicture,
     getAllVendors,
     getVendorById,
-    uploadPortfolioMedia
+    uploadPortfolioMedia,
+    getCategories,
+    createCategory
 } = require('../controllers/vendorController');
 
 // 3. Authentication & Role Authorization Middleware
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // #swagger.tags = ['Vendors']
+
+// ==========================================
+// 🏷️ CATEGORY MANAGEMENT ROUTES
+// ==========================================
+
+// Public Route: Get All Active Categories
+router.get('/categories', getCategories);
+
+// Route to Add New Category via Postman
+router.post('/categories', createCategory);
 
 // ==========================================
 // 🌐 PUBLIC VENDOR SEARCH & DISCOVERY ROUTES
