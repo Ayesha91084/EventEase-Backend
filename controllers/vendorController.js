@@ -42,7 +42,7 @@ const uploadProfilePicture = async (req, res) => {
 // ===================================================================
 const registerVendor = async (req, res) => {
     try {
-        const { userId, user, businessName, businessType, country, state, city, address, description, documents } = req.body;
+        const { userId, user, businessName, businessType, category, country, state, city, address, description, documents } = req.body;
         
         const targetUserId = req.user?.id || req.user?._id || userId || user || req.body.user;
 
@@ -92,10 +92,16 @@ const registerVendor = async (req, res) => {
             await userCheck.save();
         }
 
+        // Selected Category ObjectId validation check
+        const selectedCategory = businessType || category;
+        if (!selectedCategory) {
+            return res.status(400).json({ success: false, message: "Category ObjectId is required for vendor profile." });
+        }
+
         const newVendor = new Vendor({
             userId: targetUserId,
             businessName: businessName || "Event Vendor Professional",
-            category: businessType || "Decorator", 
+            category: selectedCategory, 
             location: finalLocation,
             description: description || "Providing premium event packages",
             cnicImage: documentUrls[0] || "",
@@ -160,7 +166,7 @@ const searchVendorsByLocation = async (req, res) => {
         if (country) query["location.country"] = { $regex: country, $options: "i" };
         if (state) query["location.state"] = { $regex: state, $options: "i" };
         if (city) query["location.city"] = { $regex: city, $options: "i" };
-        if (category) query["category"] = { $regex: category, $options: "i" };
+        if (category) query["category"] = category; // Direct Category ObjectId match
 
         const vendors = await Vendor.find(query).populate('userId', 'name email isVerified');
         const verifiedVendors = vendors.filter(v => v.userId && v.userId.isVerified === true);
