@@ -129,11 +129,10 @@ const registerVendor = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 3. GET LOGGED-IN VENDOR PROFILE (NEWLY ADDED)
+// 🚀 3. GET LOGGED-IN VENDOR PROFILE (AUTHENTICATED & DYNAMIC SAFE)
 // ===================================================================
 const getVendorProfile = async (req, res) => {
   try {
-    // 1. Get User ID safely from params, req.user (Auth Middleware), or Query
     const userId = req.params.userId || req.user?.id || req.user?._id || req.query.userId;
 
     if (!userId) {
@@ -143,7 +142,6 @@ const getVendorProfile = async (req, res) => {
       });
     }
 
-    // 2. Database query with category population
     const vendor = await Vendor.findOne({ userId }).populate('category', 'name description');
     
     if (!vendor) {
@@ -168,24 +166,20 @@ const getVendorProfile = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 4. UPDATE VENDOR PROFILE DATA (NEWLY ADDED)
+// 🚀 4. UPDATE VENDOR PROFILE DATA
 // ===================================================================
 const updateVendorProfile = async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || req.body.userId;
     const { businessName, category, phone, city, address, description } = req.body;
 
-    const updatedData = {
-      businessName,
-      phone,
-      description,
-      "location.city": city,
-      "location.address": address,
-    };
-
-    if (category) {
-      updatedData.category = category;
-    }
+    const updatedData = {};
+    if (businessName) updatedData.businessName = businessName;
+    if (phone) updatedData.phone = phone;
+    if (description) updatedData.description = description;
+    if (city) updatedData["location.city"] = city;
+    if (address) updatedData["location.address"] = address;
+    if (category) updatedData.category = category;
 
     const updatedVendor = await Vendor.findOneAndUpdate(
       { userId },
