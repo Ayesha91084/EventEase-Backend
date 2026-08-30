@@ -133,16 +133,24 @@ const registerVendor = async (req, res) => {
 // ===================================================================
 const getVendorProfile = async (req, res) => {
   try {
-    const userId = req.params.userId || req.user?.id || req.user?._id;
+    // 1. Get User ID safely from params, req.user (Auth Middleware), or Query
+    const userId = req.params.userId || req.user?.id || req.user?._id || req.query.userId;
 
     if (!userId) {
-      return res.status(400).json({ success: false, message: "User ID is required." });
+      return res.status(400).json({ 
+        success: false, 
+        message: "User authentication token or User ID is missing." 
+      });
     }
 
+    // 2. Database query with category population
     const vendor = await Vendor.findOne({ userId }).populate('category', 'name description');
     
     if (!vendor) {
-      return res.status(404).json({ success: false, message: "Vendor profile not found" });
+      return res.status(404).json({ 
+        success: false, 
+        message: "Vendor profile not found" 
+      });
     }
 
     return res.status(200).json({
@@ -151,7 +159,11 @@ const getVendorProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Get Vendor Profile Error:", error);
-    return res.status(500).json({ success: false, message: "Server error fetching profile", error: error.message });
+    return res.status(500).json({ 
+      success: false, 
+      message: "Server error fetching profile", 
+      error: error.message 
+    });
   }
 };
 
