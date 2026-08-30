@@ -27,7 +27,8 @@ const markAllAsRead = notificationController.markAllAsRead ||
 // 🔔 NOTIFICATION ROUTES
 // ==========================================
 
-router.get('/', protect, getUserNotifications);
+router.get('/', protect, getUserNotifications);       
+router.get('/user/:userId', getUserNotifications);       
 router.patch('/:id/read', protect, markAsRead);
 router.patch('/read-all', protect, markAllAsRead);
 
