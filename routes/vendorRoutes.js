@@ -15,6 +15,7 @@ const {
     getAllVendors,
     getVendorById,
     uploadPortfolioMedia,
+    deletePortfolioMedia,
     getCategories,
     createCategory
 } = require('../controllers/vendorController');
@@ -72,6 +73,9 @@ router.put('/profile/upload-image', protect, authorize('vendor'), upload.single(
 
 // Vendor Portfolio Media Upload (Max 5 images, Max 3 videos)
 router.post('/:vendorId/portfolio', protect, authorize('vendor'), upload.array('media', 8), uploadPortfolioMedia);
+
+// Vendor Portfolio Media Delete (Delete image/video from portfolio)
+router.delete('/:vendorId/portfolio', protect, authorize('vendor'), deletePortfolioMedia);
 
 // Public Route: Get Single Vendor Details by ID (Must be below /me, /user, /search)
 router.get('/:id', getVendorById);

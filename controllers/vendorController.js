@@ -364,6 +364,39 @@ const uploadPortfolioMedia = async (req, res) => {
     }
 };
 
+// ===================================================================
+// 🚀 10. DELETE PORTFOLIO MEDIA (NEW)
+// ===================================================================
+const deletePortfolioMedia = async (req, res) => {
+  try {
+    const { vendorId } = req.params;
+    const { mediaUrl, type } = req.body;
+
+    const vendor = await Vendor.findById(vendorId);
+    if (!vendor) {
+      return res.status(404).json({ success: false, message: "Vendor profile not found" });
+    }
+
+    if (type === 'image') {
+      vendor.portfolioImages = (vendor.portfolioImages || []).filter(img => img !== mediaUrl);
+    } else if (type === 'video') {
+      vendor.portfolioVideos = (vendor.portfolioVideos || []).filter(vid => vid !== mediaUrl);
+    }
+
+    await vendor.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Media deleted successfully!",
+      portfolioImages: vendor.portfolioImages,
+      portfolioVideos: vendor.portfolioVideos
+    });
+  } catch (error) {
+    console.error("Delete Media Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to delete media", error: error.message });
+  }
+};
+
 // Category fetch karne ke liye
 const getCategories = async (req, res) => {
     try {
@@ -395,6 +428,7 @@ module.exports = {
   getAllVendors,
   getVendorById,
   uploadPortfolioMedia,
+  deletePortfolioMedia,
   getCategories,  
   createCategory 
 };
