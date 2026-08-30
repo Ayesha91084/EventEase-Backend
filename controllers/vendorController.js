@@ -129,7 +129,75 @@ const registerVendor = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 3. COORDINATES MAP GENERATOR (OPENSTREETMAP/GEOLOCATION)
+// 🚀 3. GET LOGGED-IN VENDOR PROFILE (NEWLY ADDED)
+// ===================================================================
+const getVendorProfile = async (req, res) => {
+  try {
+    const userId = req.params.userId || req.user?.id || req.user?._id;
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "User ID is required." });
+    }
+
+    const vendor = await Vendor.findOne({ userId }).populate('category', 'name description');
+    
+    if (!vendor) {
+      return res.status(404).json({ success: false, message: "Vendor profile not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      vendor
+    });
+  } catch (error) {
+    console.error("Get Vendor Profile Error:", error);
+    return res.status(500).json({ success: false, message: "Server error fetching profile", error: error.message });
+  }
+};
+
+// ===================================================================
+// 🚀 4. UPDATE VENDOR PROFILE DATA (NEWLY ADDED)
+// ===================================================================
+const updateVendorProfile = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id || req.body.userId;
+    const { businessName, category, phone, city, address, description } = req.body;
+
+    const updatedData = {
+      businessName,
+      phone,
+      description,
+      "location.city": city,
+      "location.address": address,
+    };
+
+    if (category) {
+      updatedData.category = category;
+    }
+
+    const updatedVendor = await Vendor.findOneAndUpdate(
+      { userId },
+      { $set: updatedData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedVendor) {
+      return res.status(404).json({ success: false, message: "Vendor profile not found for updating." });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully!",
+      vendor: updatedVendor
+    });
+  } catch (error) {
+    console.error("Update Vendor Profile Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to update profile", error: error.message });
+  }
+};
+
+// ===================================================================
+// 🚀 5. COORDINATES MAP GENERATOR
 // ===================================================================
 const updateVendorLocation = async (req, res) => {
     try {
@@ -156,7 +224,7 @@ const updateVendorLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 4. CASCADING SEARCH & VERIFIED VENDORS ONLY
+// 🚀 6. CASCADING SEARCH & VERIFIED VENDORS ONLY
 // ===================================================================
 const searchVendorsByLocation = async (req, res) => {
     try {
@@ -183,7 +251,7 @@ const searchVendorsByLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 5. GET ALL VENDORS (PUBLIC)
+// 🚀 7. GET ALL VENDORS (PUBLIC)
 // ===================================================================
 const getAllVendors = async (req, res) => {
     try {
@@ -199,7 +267,7 @@ const getAllVendors = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 6. GET VENDOR BY ID (PUBLIC)
+// 🚀 8. GET VENDOR BY ID (PUBLIC)
 // ===================================================================
 const getVendorById = async (req, res) => {
     try {
@@ -220,7 +288,7 @@ const getVendorById = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 7. PORTFOLIO MULTI-MEDIA UPLOAD (MAX 5 IMAGES, MAX 3 VIDEOS)
+// 🚀 9. PORTFOLIO MULTI-MEDIA UPLOAD
 // ===================================================================
 const uploadPortfolioMedia = async (req, res) => {
     try {
@@ -314,6 +382,8 @@ const createCategory = async (req, res) => {
 module.exports = { 
   uploadProfilePicture, 
   registerVendor, 
+  getVendorProfile,      
+  updateVendorProfile,   
   updateVendorLocation, 
   searchVendorsByLocation,
   getAllVendors,
