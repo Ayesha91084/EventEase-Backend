@@ -207,52 +207,45 @@ const updateVendorProfile = async (req, res) => {
 // ===================================================================
 const updateVendorLocation = async (req, res) => {
     try {
-        const { latitude, longitude, vendorId } = req.body;
+        const { latitude, longitude } = req.body;
+        
+        // Vendor ID ko body, params ya authenticated user se find karne ki safe logic
+        let targetVendorId = req.body.vendorId || req.params.vendorId;
 
-        if (latitude === undefined || longitude === undefined || !vendorId) {
-            return res.status(400).json({ success: false, message: "Missing coordinates parameter fields." });
+        if (!targetVendorId) {
+            // Agar request ke sath user id hai to uske zariye vendor find kar lein
+            const userId = req.user?.id || req.user?._id || req.body.userId;
+            if (userId) {
+                const foundVendor = await Vendor.findOne({ userId });
+                if (foundVendor) targetVendorId = foundVendor._id;
+            }
+        }
+
+        if (latitude === undefined || longitude === undefined || !targetVendorId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Missing coordinates parameter fields or vendorId." 
+            });
         }
 
         const updatedProfile = await Vendor.findOneAndUpdate(
-            { _id: vendorId }, 
+            { _id: targetVendorId }, 
             { $set: { "location.latitude": Number(latitude), "location.longitude": Number(longitude) } },
             { new: true }
         );
 
+        if (!updatedProfile) {
+            return res.status(404).json({ success: false, message: "Vendor profile not found for location update." });
+        }
+
         return res.status(200).json({
             success: true,
             message: "Coordinates maps generated successfully!",
-            data: updatedProfile ? updatedProfile.location : { latitude, longitude }
+            data: updatedProfile.location
         });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Map connection log failure." });
-    }
-};
-
-// ===================================================================
-// 🚀 6. CASCADING SEARCH & VERIFIED VENDORS ONLY
-// ===================================================================
-const searchVendorsByLocation = async (req, res) => {
-    try {
-        const { country, state, city, category } = req.query;
-        
-        let query = { isVerified: true };
-
-        if (country) query["location.country"] = { $regex: country, $options: "i" };
-        if (state) query["location.state"] = { $regex: state, $options: "i" };
-        if (city) query["location.city"] = { $regex: city, $options: "i" };
-        if (category) query["category"] = category;
-
-        const vendors = await Vendor.find(query).populate('userId', 'name email isVerified');
-        const verifiedVendors = vendors.filter(v => v.userId && v.userId.isVerified === true);
-
-        return res.status(200).json({ 
-            success: true, 
-            count: verifiedVendors.length, 
-            vendors: verifiedVendors 
-        });
-    } catch (error) {
-        return res.status(500).json({ success: false, message: "Query log error.", error: error.message });
+        console.error("Update Location Error:", error);
+        return res.status(500).json({ success: false, message: "Map connection log failure.", error: error.message });
     }
 };
 
