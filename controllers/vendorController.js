@@ -254,7 +254,9 @@ const updateVendorLocation = async (req, res) => {
 // ===================================================================
 const getAllVendors = async (req, res) => {
     try {
-        const vendors = await Vendor.find({ isVerified: true }).populate('userId', 'name email');
+        const vendors = await Vendor.find({ isVerified: true })
+        .populate('userId', 'name email')
+        .populate('category', 'name description');
         return res.status(200).json({
             success: true,
             count: vendors.length,
