@@ -1,6 +1,7 @@
 const cloudinary = require('../utils/cloudinary');
 const Vendor = require('../models/VendorProfile');
 const User = require('../models/User');
+const Category = require('../models/Category');
 
 // ===================================================================
 // 🚀 1. PROFILE PICTURE UPLOAD CONTROLLER (CLOUDINARY)
@@ -166,7 +167,7 @@ const searchVendorsByLocation = async (req, res) => {
         if (country) query["location.country"] = { $regex: country, $options: "i" };
         if (state) query["location.state"] = { $regex: state, $options: "i" };
         if (city) query["location.city"] = { $regex: city, $options: "i" };
-        if (category) query["category"] = category; // Direct Category ObjectId match
+        if (category) query["category"] = category;
 
         const vendors = await Vendor.find(query).populate('userId', 'name email isVerified');
         const verifiedVendors = vendors.filter(v => v.userId && v.userId.isVerified === true);
@@ -288,7 +289,6 @@ const uploadPortfolioMedia = async (req, res) => {
         return res.status(500).json({ success: false, message: "Media upload failed", error: error.message });
     }
 };
-const Category = require('../models/Category');
 
 // Category fetch karne ke liye
 const getCategories = async (req, res) => {
@@ -318,5 +318,7 @@ module.exports = {
   searchVendorsByLocation,
   getAllVendors,
   getVendorById,
-  uploadPortfolioMedia
+  uploadPortfolioMedia,
+  getCategories,  
+  createCategory 
 };
