@@ -24,7 +24,7 @@ const uploadProfilePicture = async (req, res) => {
       vendorId,
       { profileImage: uploadResponse.secure_url },
       { new: true }
-    );
+    ).populate('category', 'name description icon');
 
     return res.status(200).json({
       success: true,
@@ -112,10 +112,15 @@ const registerVendor = async (req, res) => {
 
         await newVendor.save();
 
+        // ✨ Populate category so frontend gets the category object instead of an ID string
+        const populatedVendor = await Vendor.findById(newVendor._id)
+            .populate('userId', 'name email')
+            .populate('category', 'name description icon');
+
         return res.status(201).json({
             success: true,
             message: "Vendor registered successfully! Pending admin verification.",
-            vendor: newVendor
+            vendor: populatedVendor
         });
 
     } catch (error) {
@@ -142,7 +147,9 @@ const getVendorProfile = async (req, res) => {
       });
     }
 
-    const vendor = await Vendor.findOne({ userId }).populate('category', 'name description');
+    const vendor = await Vendor.findOne({ userId })
+      .populate('userId', 'name email')
+      .populate('category', 'name description icon');
     
     if (!vendor) {
       return res.status(404).json({ 
@@ -185,7 +192,7 @@ const updateVendorProfile = async (req, res) => {
       { userId },
       { $set: updatedData },
       { new: true, runValidators: true }
-    );
+    ).populate('category', 'name description icon');
 
     if (!updatedVendor) {
       return res.status(404).json({ success: false, message: "Vendor profile not found for updating." });
@@ -209,11 +216,9 @@ const updateVendorLocation = async (req, res) => {
     try {
         const { latitude, longitude } = req.body;
         
-        // Vendor ID ko body, params ya authenticated user se find karne ki safe logic
         let targetVendorId = req.body.vendorId || req.params.vendorId;
 
         if (!targetVendorId) {
-            // Agar request ke sath user id hai to uske zariye vendor find kar lein
             const userId = req.user?.id || req.user?._id || req.body.userId;
             if (userId) {
                 const foundVendor = await Vendor.findOne({ userId });
@@ -232,7 +237,7 @@ const updateVendorLocation = async (req, res) => {
             { _id: targetVendorId }, 
             { $set: { "location.latitude": Number(latitude), "location.longitude": Number(longitude) } },
             { new: true }
-        );
+        ).populate('category', 'name description icon');
 
         if (!updatedProfile) {
             return res.status(404).json({ success: false, message: "Vendor profile not found for location update." });
@@ -250,13 +255,39 @@ const updateVendorLocation = async (req, res) => {
 };
 
 // ===================================================================
+// 🚀 6. SEARCH VENDORS BY LOCATION (Placeholder for completeness)
+// ===================================================================
+const searchVendorsByLocation = async (req, res) => {
+    try {
+        const { city, category } = req.query;
+        let query = { isVerified: true };
+
+        if (city) query["location.city"] = new RegExp(city, 'i');
+        if (category) query.category = category;
+
+        const vendors = await Vendor.find(query)
+            .populate('userId', 'name email')
+            .populate('category', 'name description icon');
+
+        return res.status(200).json({
+            success: true,
+            count: vendors.length,
+            vendors
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Error searching vendors", error: error.message });
+    }
+};
+
+// ===================================================================
 // 🚀 7. GET ALL VENDORS (PUBLIC)
 // ===================================================================
 const getAllVendors = async (req, res) => {
     try {
         const vendors = await Vendor.find({ isVerified: true })
         .populate('userId', 'name email')
-        .populate('category', 'name description');
+        .populate('category', 'name description icon');
+        
         return res.status(200).json({
             success: true,
             count: vendors.length,
@@ -273,7 +304,10 @@ const getAllVendors = async (req, res) => {
 const getVendorById = async (req, res) => {
     try {
         const { id } = req.params;
-        const vendor = await Vendor.findById(id).populate('userId', 'name email');
+        // ✨ Added category populate here so ID string doesn't get returned
+        const vendor = await Vendor.findById(id)
+            .populate('userId', 'name email')
+            .populate('category', 'name description icon');
 
         if (!vendor) {
             return res.status(404).json({ success: false, message: "Vendor not found" });
@@ -360,7 +394,7 @@ const uploadPortfolioMedia = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 10. DELETE PORTFOLIO MEDIA (NEW)
+// 🚀 10. DELETE PORTFOLIO MEDIA
 // ===================================================================
 const deletePortfolioMedia = async (req, res) => {
   try {
@@ -392,7 +426,9 @@ const deletePortfolioMedia = async (req, res) => {
   }
 };
 
-// Category fetch karne ke liye
+// ===================================================================
+// 🚀 11. CATEGORY MANAGEMENT CONTROLLERS
+// ===================================================================
 const getCategories = async (req, res) => {
     try {
         const categories = await Category.find({ isActive: true });
@@ -402,7 +438,6 @@ const getCategories = async (req, res) => {
     }
 };
 
-// Category create karne ke liye
 const createCategory = async (req, res) => {
     try {
         const category = new Category(req.body);
