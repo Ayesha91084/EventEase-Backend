@@ -110,5 +110,3 @@ const startConversation = async (req, res) => {
 };
 
 module.exports = { getChatHistory, saveMessage, startConversation };
-
-module.exports = { getChatHistory, saveMessage };
