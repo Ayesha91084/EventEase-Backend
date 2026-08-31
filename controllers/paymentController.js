@@ -1,5 +1,6 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy_key');
 const Booking = require('../models/Booking');
+const Payment = require('../models/Payment'); // <-- Naya: Payment model import kiya
 
 // 1. Process Payment Controller
 const processPayment = async (req, res) => {
@@ -50,6 +51,7 @@ const processPayment = async (req, res) => {
         const calculatedCommission = (grossAmount * rate) / 100;
         const calculatedVendorPayout = grossAmount - calculatedCommission;
 
+        // Booking status update
         targetBooking.status = 'accepted';
         targetBooking.paymentStatus = 'paid';
         targetBooking.paymentIntentId = chargeId;
@@ -57,6 +59,20 @@ const processPayment = async (req, res) => {
         targetBooking.vendorPayout = calculatedVendorPayout;
 
         await targetBooking.save();
+
+        // 🚀 Naya: Payment Collection mein entry save karein taake history aur reports theek kaam karein
+        await Payment.create({
+            bookingId: targetBooking._id,
+            userId: targetBooking.user || targetBooking.userId,
+            vendorId: targetBooking.vendorId,
+            amount: grossAmount,
+            currency: 'PKR',
+            method: 'card',
+            status: 'success',
+            transactionId: chargeId,
+            adminCommission: calculatedCommission,
+            vendorPayout: calculatedVendorPayout
+        });
 
         return res.status(200).json({
             success: true,
@@ -100,12 +116,12 @@ const createPaymentIntent = async (req, res) => {
 const getPaymentHistory = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id;
-        const bookings = await Booking.find({ user: userId, paymentStatus: 'paid' });
+        const payments = await Payment.find({ userId: userId, status: 'success' }).populate('bookingId vendorId');
 
         return res.status(200).json({
             success: true,
-            count: bookings.length,
-            payments: bookings
+            count: payments.length,
+            payments: payments
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });

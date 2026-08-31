@@ -11,13 +11,12 @@ const {
 // 2. Auth Middleware Import
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Fallback protection: check if protect function exists, else pass dummy middleware
 const protect = authMiddleware && authMiddleware.protect 
     ? authMiddleware.protect 
     : (req, res, next) => next();
 
 // ==========================================
-// 💳 PAYMENT ROUTES
+// 💳 PAYMENT ROUTES (Base path: /api/payments)
 // ==========================================
 
 // Process Direct Charge & Commission Deduction
