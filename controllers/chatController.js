@@ -82,5 +82,33 @@ const saveMessage = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message });
     }
 };
+// ==========================================
+// 3. START OR GET CONVERSATION
+// ==========================================
+// @route   POST /api/chat/conversation
+const startConversation = async (req, res) => {
+    try {
+        const { vendorId } = req.body;
+        const customerId = req.user._id;
+
+        if (!vendorId) {
+            return res.status(400).json({ success: false, message: "Vendor ID is required." });
+        }
+
+        // Aapke Message model ya ChatRoom model ke mutabiq room name ya ID generate ya find karna
+        const roomName = `room_${Math.min(customerId, vendorId)}_${Math.max(customerId, vendorId)}`;
+
+        return res.status(200).json({
+            success: true,
+            conversationId: roomName
+        });
+
+    } catch (error) {
+        console.error("Start Conversation Error:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+module.exports = { getChatHistory, saveMessage, startConversation };
 
 module.exports = { getChatHistory, saveMessage };

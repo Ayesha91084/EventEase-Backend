@@ -20,5 +20,8 @@ router.get('/room/:room', protect, getChatHistory);
 // #swagger.tags = ['Chat']
 // Message HTTP API route se save karne ke liye: POST /api/chat/save
 router.post('/save', protect, saveMessage);
+// 3. Start or Get Conversation Endpoint
+// #swagger.tags = ['Chat']
+router.post('/conversation', protect, startConversation);
 
 module.exports = router;
