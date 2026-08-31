@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // 1. Controllers Import
-const { getChatHistory, saveMessage } = require('../controllers/chatController');
+const { getChatHistory, saveMessage, startConversation } = require('../controllers/chatController');
 
 // 2. Auth Middleware Import
 const { protect } = require('../middleware/authMiddleware');
