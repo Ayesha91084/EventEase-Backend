@@ -5,7 +5,6 @@ const chatSchema = new mongoose.Schema({
     room: {
         type: String,
         required: true,
-        unique: true,
         trim: true
     },
     // Customer aur Vendor IDs
