@@ -177,10 +177,27 @@ const getCustomerBookings = async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+// 5. GET SINGLE BOOKING BY ID
+const getBookingById = async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id)
+            .populate('customer', 'name email phone profileImage')
+            .populate('vendorId', 'businessName category profileImage location');
+
+        if (!booking) {
+            return res.status(404).json({ success: false, message: "Booking not found." });
+        }
+
+        res.status(200).json({ success: true, data: booking });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
 
 module.exports = { 
     createBooking, 
     getVendorBookings, 
     updateBookingStatus,
-    getCustomerBookings 
+    getCustomerBookings, 
+    getBookingById
 };

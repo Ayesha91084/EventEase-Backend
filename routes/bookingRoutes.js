@@ -6,7 +6,8 @@ const {
     createBooking, 
     getVendorBookings, 
     updateBookingStatus, 
-    getCustomerBookings 
+    getCustomerBookings,
+    getBookingById
 } = require('../controllers/bookingController');
 
 // 2. Authentication Middleware Import
@@ -62,5 +63,7 @@ router.patch('/:id/status', protect, updateBookingStatus);
         }
     } 
 */
+// Get single booking by ID
+router.get('/:id', protect, getBookingById);
 
 module.exports = router;
