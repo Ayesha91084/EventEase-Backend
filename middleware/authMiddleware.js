@@ -47,7 +47,7 @@ const authorize = (...roles) => {
                 message: `User role '${req.user ? req.user.role : 'guest'}' is not authorized to access this route` 
             });
         }
-        next();
+        return next();
     };
 };
 
