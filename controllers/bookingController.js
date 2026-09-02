@@ -7,7 +7,7 @@ const createBooking = async (req, res) => {
     try {
         console.log("Postman / Frontend Data:", req.body);
 
-        const { vendorId, eventDate, totalAmount, packageDetails } = req.body;
+        const { vendorId, eventDate, totalAmount, totalPrice, packageDetails } = req.body;
         const finalAmount = totalAmount || totalPrice;
         
         // Logged-in user authentication check
