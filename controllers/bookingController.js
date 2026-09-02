@@ -8,6 +8,7 @@ const createBooking = async (req, res) => {
         console.log("Postman / Frontend Data:", req.body);
 
         const { vendorId, eventDate, totalAmount, packageDetails } = req.body;
+        const finalAmount = totalAmount || totalPrice;
         
         // Logged-in user authentication check
         const customerId = req.user ? (req.user.id || req.user._id) : null; 
@@ -71,7 +72,7 @@ const createBooking = async (req, res) => {
             vendorId: vendorId,
             packageDetails: packageDetails,
             eventDate: selectedDate,
-            totalAmount: Number(totalAmount),
+            totalAmount: Number(finalAmount),
             status: 'pending',
             paymentStatus: 'pending'
         });
