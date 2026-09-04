@@ -63,7 +63,7 @@ const processPayment = async (req, res) => {
         // 🚀 Naya: Payment Collection mein entry save karein taake history aur reports theek kaam karein
         await Payment.create({
             bookingId: targetBooking._id,
-            userId: targetBooking.user || targetBooking.userId,
+            userId: req.body.userId || req.user?._id || req.user?.id || targetBooking.user || targetBooking.userId,
             vendorId: targetBooking.vendorId,
             amount: grossAmount,
             currency: 'PKR',
