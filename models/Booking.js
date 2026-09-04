@@ -44,12 +44,11 @@ const bookingSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Auto-calculate Commission & Payout before saving document
-bookingSchema.pre('save', function (next) {
+bookingSchema.pre('save', function () {
     if (this.totalAmount) {
         this.adminCommission = (this.totalAmount * this.commissionRate) / 100;
         this.vendorPayout = this.totalAmount - this.adminCommission;
     }
-    next();
 });
 
 bookingSchema.index({ customer: 1 });
