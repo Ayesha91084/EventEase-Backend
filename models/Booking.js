@@ -13,7 +13,7 @@ const bookingSchema = new mongoose.Schema({
         required: true 
     },
     packageDetails: {
-        packageName: { type: Object, required: true },
+        packageName: { type: String, required: true },
         basePrice: { type: Number, required: true },
         extras: [{ 
             name: { type: String },
