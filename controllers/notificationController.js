@@ -66,7 +66,7 @@ const createNotification = async (req, res) => {
         }
 
         const newNotification = new Notification({
-            user: userId,
+            userId,
             title,
             message,
             type: type || 'general',
@@ -92,7 +92,7 @@ const getUserNotifications = async (req, res) => {
             return res.status(400).json({ success: false, message: "User ID is required." });
         }
 
-        const notifications = await Notification.find({ user: userId }).sort({ createdAt: -1 });
+        const notifications = await Notification.find({ userId }).sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,

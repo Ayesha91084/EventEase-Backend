@@ -23,6 +23,13 @@ const markAsRead = notificationController.markAsRead ||
 const markAllAsRead = notificationController.markAllAsRead || 
     ((req, res) => res.json({ success: true, message: "All notifications marked as read" }));
 
+    const createNotification = notificationController.createNotification ||
+    ((req, res) => res.json({ success: true }));
+
+const sendEmailNotification = notificationController.sendEmailNotification ||
+    ((req, res) => res.json({ success: true }));
+
+
 // ==========================================
 // 🔔 NOTIFICATION ROUTES
 // ==========================================
@@ -31,5 +38,7 @@ router.get('/', protect, getUserNotifications);
 router.get('/user/:userId', getUserNotifications);       
 router.patch('/:id/read', protect, markAsRead);
 router.patch('/read-all', protect, markAllAsRead);
+router.post('/send-email', sendEmailNotification);
+router.post('/', protect, createNotification);
 
 module.exports = router;
