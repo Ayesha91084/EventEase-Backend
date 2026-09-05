@@ -10,7 +10,8 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.EMAIL_USER || "fyp20222026@gmail.com",
         pass: process.env.EMAIL_PASS
-    }
+    },
+     family: 4 
 });
 
 // ==========================================
