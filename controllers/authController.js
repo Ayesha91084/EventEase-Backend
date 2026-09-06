@@ -13,9 +13,9 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// ==========================================
+
 // 1. SIGNUP API (For Public Customers/Vendors)
-// ==========================================
+
 const signup = async (req, res, next) => {
     try {
         const { name, email, password, role, city, address, description, phone } = req.body;
@@ -74,9 +74,9 @@ const signup = async (req, res, next) => {
     }
 };
 
-// ==========================================
+
 // 2. VERIFY OTP API
-// ==========================================
+
 const verifyOTP = async (req, res, next) => {
     try {
         const { email, otp } = req.body;
@@ -117,9 +117,9 @@ const verifyOTP = async (req, res, next) => {
     }
 };
 
-// ==========================================
+
 // 3. SECURE LOGIN API (DB Bcrypt Verification)
-// ==========================================
+
 const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -156,9 +156,9 @@ const login = async (req, res, next) => {
     }
 };
 
-// ==========================================
+
 // 4. GET LOGGED-IN USER PROFILE (/me)
-// ==========================================
+
 const getMe = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
@@ -171,9 +171,9 @@ const getMe = async (req, res, next) => {
     }
 };
 
-// ==========================================
+
 // 5. UPDATE PROFILE
-// ==========================================
+
 const updateProfile = async (req, res, next) => {
     try {
         const { name, email, phone, profileImage } = req.body;
@@ -189,9 +189,9 @@ const updateProfile = async (req, res, next) => {
     }
 };
 
-// ==========================================
+
 // 6. FORGOT & RESET PASSWORD
-// ==========================================
+
 const forgotPassword = async (req, res, next) => {
     try {
         const { email } = req.body;
@@ -247,9 +247,9 @@ const resetPassword = async (req, res, next) => {
     }
 };
 
-// ==========================================
+
 // 7. GOOGLE AUTHENTICATION
-// ==========================================
+
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
 const googleOAuthClient = new OAuth2Client(CLIENT_ID);
 

@@ -13,9 +13,9 @@ const {
 // 2. Authentication Middleware Import
 const { protect } = require('../middleware/authMiddleware');
 
-// ==========================================
+
 //  BOOKING ROUTES DEFINITION
-// ==========================================
+
 
 // 1. Create Booking Route (Customer places a booking request)
 // #swagger.tags = ['Bookings']
@@ -35,9 +35,9 @@ router.post('/book', protect, createBooking);
     } 
 */
 
-// ===================================================================
+
 //  VENDOR & CUSTOMER DASHBOARD INTEGRATION ROUTES
-// ===================================================================
+
 
 // 2. Get Vendor Specific Bookings (Vendor Dashboard)
 // #swagger.tags = ['Bookings']

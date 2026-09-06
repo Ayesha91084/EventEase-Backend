@@ -16,9 +16,9 @@ const addReview = reviewController.addReview || ((req, res) => res.json({ succes
 const getVendorReviews = reviewController.getVendorReviews || ((req, res) => res.json({ success: true, reviews: [] }));
 const deleteReview = reviewController.deleteReview || ((req, res) => res.json({ success: true, message: "Delete review route active" }));
 
-// ==========================================
+
 //  RATING & REVIEW ROUTES
-// ==========================================
+
 
 router.post('/', protect, addReview);
 router.get('/vendor/:vendorId', getVendorReviews);

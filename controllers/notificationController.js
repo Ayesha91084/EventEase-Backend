@@ -14,9 +14,9 @@ const transporter = nodemailer.createTransport({
      family: 4 
 });
 
-// ==========================================
+
 // 1. REAL EMAIL SENDER (OTP & Booking Notifications)
-// ==========================================
+
 const sendEmailNotification = async (req, res) => {
     try {
         const { toEmail, subject, textMessage } = req.body;
@@ -55,9 +55,9 @@ const sendEmailNotification = async (req, res) => {
     }
 };
 
-// ==========================================
+
 // 2. CREATE IN-APP NOTIFICATION (DB Save)
-// ==========================================
+
 const createNotification = async (req, res) => {
     try {
         const { userId, title, message, type } = req.body;
@@ -82,9 +82,9 @@ const createNotification = async (req, res) => {
     }
 };
 
-// ==========================================
+
 // 3. GET USER IN-APP NOTIFICATIONS
-// ==========================================
+
 const getUserNotifications = async (req, res) => {
     try {
         const userId = req.user ? (req.user.id || req.user._id) : req.params.userId;

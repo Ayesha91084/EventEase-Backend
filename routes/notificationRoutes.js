@@ -30,9 +30,9 @@ const sendEmailNotification = notificationController.sendEmailNotification ||
     ((req, res) => res.json({ success: true }));
 
 
-// ==========================================
+
 //  NOTIFICATION ROUTES
-// ==========================================
+
 
 router.get('/', protect, getUserNotifications);       
 router.get('/user/:userId', getUserNotifications);       

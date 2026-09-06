@@ -1,9 +1,9 @@
 const Rating = require('../models/Rating');
 const VendorProfile = require('../models/VendorProfile');
 
-// ==========================================
+
 // 1. GIVE / UPDATE RATING API
-// ==========================================
+
 // @route   POST /api/ratings/give
 // @access  Private (Customer Only)
 const giveRating = async (req, res) => {
@@ -72,9 +72,9 @@ const giveRating = async (req, res) => {
     }
 };
 
-// ==========================================
+
 // 2. GET VENDOR RATINGS & REVIEWS
-// ==========================================
+
 const getVendorRatings = async (req, res) => {
     try {
         const { vendorId } = req.params;
