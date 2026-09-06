@@ -95,7 +95,7 @@ const startConversation = async (req, res) => {
             return res.status(400).json({ success: false, message: "Vendor ID is required." });
         }
 
-        // Aapke Message model ya ChatRoom model ke mutabiq room name ya ID generate ya find karna
+        
         const roomName = `room_${Math.min(customerId, vendorId)}_${Math.max(customerId, vendorId)}`;
 
         return res.status(200).json({

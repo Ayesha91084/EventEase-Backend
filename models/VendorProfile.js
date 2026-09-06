@@ -5,7 +5,7 @@ const vendorProfileSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
-        unique: true // Ek user ka sirf ek hi vendor profile ho sakta hai
+        unique: true // one vendor profile for one user
     },
     businessName: {
         type: String,

@@ -17,7 +17,7 @@ const categorySchema = new mongoose.Schema({
     },
     isActive: {
         type: Boolean,
-        default: true // Admin is category ko enable/disable kar sakta hai
+        default: true // Admin  can enable/disable this category
     }
 }, { timestamps: true });
 

@@ -28,7 +28,7 @@ const notificationSchema = new mongoose.Schema({
     // Click action link/navigation help
     targetId: {
         type: mongoose.Schema.Types.ObjectId,
-        required: false // Booking ID ya Chat Room ID redirection ke liye
+        required: false // Booking ID ya Chat Room ID redirection
     }
 }, { timestamps: true });
 

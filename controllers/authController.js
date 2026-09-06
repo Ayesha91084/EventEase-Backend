@@ -32,7 +32,7 @@ const signup = async (req, res, next) => {
 
         let assignedRole = role === 'vendor' ? 'vendor' : 'customer';
 
-        // Manual Hashing (Jab User.js mein pre-save hook na ho)
+        // Manual Hashing ( when no pre save hook in User.js)
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -230,7 +230,7 @@ const resetPassword = async (req, res, next) => {
         const user = await User.findOne({ email });
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // OTP dobara verify karo — verifyOTP step ko bypass na hone do
+        // again verify otp no step by of otp
         if (!user.otp || user.otp !== otp || new Date() > user.otpExpires) {
             return res.status(400).json({ message: "Invalid or expired reset session. Please verify OTP again." });
         }

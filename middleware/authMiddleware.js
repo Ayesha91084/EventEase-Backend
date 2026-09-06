@@ -13,13 +13,13 @@ const protect = async (req, res, next) => {
             // Token extract karein
             token = req.headers.authorization.split(' ')[1];
 
-            // Token verify karein
+            // Token verify 
             const decoded = jwt.verify(
                 token, 
                 process.env.JWT_SECRET || 'secretKey'
             );
 
-            // User fetch karke req.user me save karein
+            // User fetch and save in req.user 
             req.user = await User.findById(decoded.id).select('-password');
 
             if (!req.user) {

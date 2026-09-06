@@ -50,7 +50,7 @@ const giveRating = async (req, res) => {
         const allRatings = await Rating.find({ vendor: vendorId });
         const avgRating = allRatings.reduce((sum, item) => sum + item.stars, 0) / allRatings.length;
 
-        // VendorProfile Database mein live score update karein
+        // VendorProfile Database  live score update 
         await VendorProfile.findOneAndUpdate(
             { $or: [{ _id: vendorId }, { userId: vendorId }] },
             { 

@@ -41,12 +41,12 @@ router.post('/book', protect, createBooking);
 
 // 2. Get Vendor Specific Bookings (Vendor Dashboard)
 // #swagger.tags = ['Bookings']
-// #swagger.description = 'Vendor dashboard par uski specific bookings load karne ke liye'
+// #swagger.description = ' on Vendor dashboard  specific bookings load '
 router.get('/vendor/:vendorId', protect, getVendorBookings);
 
 // 3. Customer Dashboard Route (Fetch Logged-in Customer Active Bookings)
 // #swagger.tags = ['Bookings']
-// #swagger.description = 'Customer dashboard par personal active bookings fetch karne ke liye'
+// #swagger.description = ' on Customer dashboard  personal active bookings fetch '
 router.get('/customer/my-bookings', protect, getCustomerBookings);
 
 // 4. Update Booking Status Route (Vendor Accept/Reject Actions)
