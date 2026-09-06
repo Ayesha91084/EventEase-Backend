@@ -6,7 +6,7 @@ let notificationController = {};
 try {
     notificationController = require('../controllers/notificationController');
 } catch (err) {
-    console.warn("⚠️ Warning: notificationController.js not found.");
+    console.warn(" Warning: notificationController.js not found.");
 }
 
 // 2. Safe Auth Middleware Import
@@ -31,7 +31,7 @@ const sendEmailNotification = notificationController.sendEmailNotification ||
 
 
 // ==========================================
-// 🔔 NOTIFICATION ROUTES
+//  NOTIFICATION ROUTES
 // ==========================================
 
 router.get('/', protect, getUserNotifications);       

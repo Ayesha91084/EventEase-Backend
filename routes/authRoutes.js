@@ -16,7 +16,7 @@ const {
 const { protect } = require('../middleware/authMiddleware');
 
 // ==========================================
-// 🛠️ AUTHENTICATION & SOCIAL LOGIN ROUTES
+//  AUTHENTICATION & SOCIAL LOGIN ROUTES
 // ==========================================
 
 // Standard Manual Auth
@@ -32,7 +32,7 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 
 // ==========================================
-// 🔐 PROTECTED USER PROFILE ROUTES
+//  PROTECTED USER PROFILE ROUTES
 // ==========================================
 
 // Get Current Logged-in User Profile

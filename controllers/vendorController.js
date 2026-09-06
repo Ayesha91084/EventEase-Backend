@@ -4,7 +4,7 @@ const User = require('../models/User');
 const Category = require('../models/Category');
 
 // ===================================================================
-// 🚀 1. PROFILE PICTURE UPLOAD CONTROLLER (CLOUDINARY)
+//  1. PROFILE PICTURE UPLOAD CONTROLLER (CLOUDINARY)
 // ===================================================================
 const uploadProfilePicture = async (req, res) => {
   try {
@@ -39,7 +39,7 @@ const uploadProfilePicture = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 2. VENDOR REGISTRATION CONTROLLER (WITH CLOUDINARY UPLOAD)
+//  2. VENDOR REGISTRATION CONTROLLER (WITH CLOUDINARY UPLOAD)
 // ===================================================================
 const registerVendor = async (req, res) => {
     try {
@@ -134,7 +134,7 @@ const registerVendor = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 3. GET LOGGED-IN VENDOR PROFILE (AUTHENTICATED & DYNAMIC SAFE)
+//  3. GET LOGGED-IN VENDOR PROFILE (AUTHENTICATED & DYNAMIC SAFE)
 // ===================================================================
 const getVendorProfile = async (req, res) => {
   try {
@@ -173,7 +173,7 @@ const getVendorProfile = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 4. UPDATE VENDOR PROFILE DATA
+//  4. UPDATE VENDOR PROFILE DATA
 // ===================================================================
 const updateVendorProfile = async (req, res) => {
   try {
@@ -210,7 +210,7 @@ const updateVendorProfile = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 5. COORDINATES MAP GENERATOR
+//  5. COORDINATES MAP GENERATOR
 // ===================================================================
 const updateVendorLocation = async (req, res) => {
     try {
@@ -255,7 +255,7 @@ const updateVendorLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 6. SEARCH VENDORS BY LOCATION (Placeholder for completeness)
+//  6. SEARCH VENDORS BY LOCATION (Placeholder for completeness)
 // ===================================================================
 const searchVendorsByLocation = async (req, res) => {
     try {
@@ -280,7 +280,7 @@ const searchVendorsByLocation = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 7. GET ALL VENDORS (PUBLIC)
+//  7. GET ALL VENDORS (PUBLIC)
 // ===================================================================
 const getAllVendors = async (req, res) => {
     try {
@@ -299,7 +299,7 @@ const getAllVendors = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 8. GET VENDOR BY ID (PUBLIC)
+// 8. GET VENDOR BY ID (PUBLIC)
 // ===================================================================
 const getVendorById = async (req, res) => {
     try {
@@ -323,7 +323,7 @@ const getVendorById = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 9. PORTFOLIO MULTI-MEDIA UPLOAD
+//  9. PORTFOLIO MULTI-MEDIA UPLOAD
 // ===================================================================
 const uploadPortfolioMedia = async (req, res) => {
     try {
@@ -394,7 +394,7 @@ const uploadPortfolioMedia = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 10. DELETE PORTFOLIO MEDIA
+//  10. DELETE PORTFOLIO MEDIA
 // ===================================================================
 const deletePortfolioMedia = async (req, res) => {
   try {
@@ -427,7 +427,7 @@ const deletePortfolioMedia = async (req, res) => {
 };
 
 // ===================================================================
-// 🚀 11. CATEGORY MANAGEMENT CONTROLLERS
+//  11. CATEGORY MANAGEMENT CONTROLLERS
 // ===================================================================
 const getCategories = async (req, res) => {
     try {

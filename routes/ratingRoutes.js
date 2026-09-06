@@ -6,7 +6,7 @@ let reviewController = {};
 try {
     reviewController = require('../controllers/reviewController');
 } catch (err) {
-    console.warn("⚠️ Warning: reviewController.js not found. Using fallback handlers.");
+    console.warn(" Warning: reviewController.js not found. Using fallback handlers.");
 }
 
 const authMiddleware = require('../middleware/authMiddleware') || {};
@@ -17,7 +17,7 @@ const getVendorReviews = reviewController.getVendorReviews || ((req, res) => res
 const deleteReview = reviewController.deleteReview || ((req, res) => res.json({ success: true, message: "Delete review route active" }));
 
 // ==========================================
-// ⭐ RATING & REVIEW ROUTES
+//  RATING & REVIEW ROUTES
 // ==========================================
 
 router.post('/', protect, addReview);

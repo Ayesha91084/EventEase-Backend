@@ -30,7 +30,7 @@ const bookingSchema = new mongoose.Schema({
     },
     totalAmount: { type: Number, required: true },
     
-    // 🚀 Task 6: Dynamic Admin Commission & Vendor Payout Fields
+    //  Task 6: Dynamic Admin Commission & Vendor Payout Fields
     commissionRate: { type: Number, default: 10 }, // Default 10% Platform Fee
     adminCommission: { type: Number, default: 0 },
     vendorPayout: { type: Number, default: 0 },

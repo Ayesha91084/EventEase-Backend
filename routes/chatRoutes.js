@@ -8,7 +8,7 @@ const { getChatHistory, saveMessage, startConversation } = require('../controlle
 const { protect } = require('../middleware/authMiddleware');
 
 // ==========================================
-// 🛠️ CHAT ROUTES DEFINITION
+//  CHAT ROUTES DEFINITION
 // ==========================================
 
 // 1. Fetch Chat History Endpoint

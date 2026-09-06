@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 const Notification = require('../models/Notification'); // DB Persistence Schema
 
-// 🚀 REAL GMAIL SMTP TRANSPORTER SETUP
+//  REAL GMAIL SMTP TRANSPORTER SETUP
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',

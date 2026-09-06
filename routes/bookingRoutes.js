@@ -14,7 +14,7 @@ const {
 const { protect } = require('../middleware/authMiddleware');
 
 // ==========================================
-// 🛠️ BOOKING ROUTES DEFINITION
+//  BOOKING ROUTES DEFINITION
 // ==========================================
 
 // 1. Create Booking Route (Customer places a booking request)
@@ -36,7 +36,7 @@ router.post('/book', protect, createBooking);
 */
 
 // ===================================================================
-// 🚀 VENDOR & CUSTOMER DASHBOARD INTEGRATION ROUTES
+//  VENDOR & CUSTOMER DASHBOARD INTEGRATION ROUTES
 // ===================================================================
 
 // 2. Get Vendor Specific Bookings (Vendor Dashboard)

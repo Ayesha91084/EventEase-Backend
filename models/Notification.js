@@ -32,7 +32,7 @@ const notificationSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-// 🚀 Indexing for fast Unread Notifications fetch
+//  Indexing for fast Unread Notifications fetch
 notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Notification', notificationSchema);

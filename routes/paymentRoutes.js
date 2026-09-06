@@ -16,7 +16,7 @@ const protect = authMiddleware && authMiddleware.protect
     : (req, res, next) => next();
 
 // ==========================================
-// 💳 PAYMENT ROUTES (Base path: /api/payments)
+// PAYMENT ROUTES (Base path: /api/payments)
 // ==========================================
 
 // Process Direct Charge & Commission Deduction

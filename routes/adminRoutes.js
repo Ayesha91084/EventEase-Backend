@@ -20,7 +20,7 @@ const getHandler = (fnName, defaultMsg) => {
 };
 
 // ==========================================
-// 🛡️ ADMIN ROUTES (SAFE HANDLERS)
+//  ADMIN ROUTES (SAFE HANDLERS)
 // ==========================================
 
 // Dashboard Analytics / System Overview

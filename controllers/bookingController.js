@@ -1,8 +1,8 @@
 const Booking = require('../models/Booking');
 
-// ==========================================
+
 // 1. CREATE BOOKING API (Customer Only)
-// ==========================================
+
 const createBooking = async (req, res) => {
     try {
         console.log("Postman / Frontend Data:", req.body);
@@ -26,9 +26,9 @@ const createBooking = async (req, res) => {
             });
         }
 
-        // ------------------------------------------
-        // 🔒 1. Past Dates Validation
-        // ------------------------------------------
+        
+        //  1. Past Dates Validation
+        
         const today = new Date();
         today.setHours(0, 0, 0, 0); 
 
@@ -44,9 +44,9 @@ const createBooking = async (req, res) => {
             });
         }
 
-        // ------------------------------------------
-        // 🔒 2. Overlapping Booking Protection (Full Day Range Match)
-        // ------------------------------------------
+        
+        // 2. Overlapping Booking Protection (Full Day Range Match)
+        
         const startOfDay = new Date(selectedDate);
         startOfDay.setHours(0, 0, 0, 0);
 
@@ -91,9 +91,9 @@ const createBooking = async (req, res) => {
     }
 };
 
-// ==========================================
+
 // 2. GET VENDOR SPECIFIC BOOKINGS & EARNINGS
-// ==========================================
+
 const getVendorBookings = async (req, res) => {
     try {
         const vendorId = req.params.vendorId || (req.user ? (req.user.id || req.user._id) : null);
@@ -122,9 +122,9 @@ const getVendorBookings = async (req, res) => {
     }
 };
 
-// ==========================================
+
 // 3. UPDATE BOOKING STATUS (Vendor Accept/Reject)
-// ==========================================
+
 const updateBookingStatus = async (req, res) => {
     try {
         const id = req.params.id || req.params.bookingId;
@@ -154,9 +154,9 @@ const updateBookingStatus = async (req, res) => {
     }
 };
 
-// ==========================================
+
 // 4. GET CUSTOMER DASHBOARD BOOKINGS
-// ==========================================
+
 const getCustomerBookings = async (req, res) => {
     try {
         const customerId = req.user ? (req.user.id || req.user._id) : req.params.customerId;

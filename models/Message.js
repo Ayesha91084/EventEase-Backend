@@ -23,7 +23,7 @@ const MessageSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-// 🚀 Fast Chat History Retrieval Index
+//  Fast Chat History Retrieval Index
 MessageSchema.index({ room: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Message', MessageSchema);

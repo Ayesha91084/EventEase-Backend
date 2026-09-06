@@ -26,7 +26,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 // #swagger.tags = ['Vendors']
 
 // ==========================================
-// 🏷️ CATEGORY MANAGEMENT ROUTES
+// CATEGORY MANAGEMENT ROUTES
 // ==========================================
 
 // Public Route: Get All Active Categories
@@ -36,7 +36,7 @@ router.get('/categories', getCategories);
 router.post('/categories', createCategory);
 
 // ==========================================
-// 🌐 PUBLIC VENDOR SEARCH & DISCOVERY ROUTES
+// PUBLIC VENDOR SEARCH & DISCOVERY ROUTES
 // ==========================================
 
 // 1. Public Search Vendors (By OpenStreetMap Coordinates, City, or Name)
@@ -46,7 +46,7 @@ router.get('/search', searchVendorsByLocation);
 router.get('/', getAllVendors);
 
 // ==========================================
-// 🔐 PROTECTED VENDOR PROFILE ROUTES (NEW ADDITION)
+// PROTECTED VENDOR PROFILE ROUTES (NEW ADDITION)
 // ==========================================
 
 // Get Current Logged-in Vendor Profile (/api/vendors/me)
@@ -59,7 +59,7 @@ router.get('/user/:userId', getVendorProfile);
 router.put('/profile', protect, updateVendorProfile);
 
 // ==========================================
-// 🔐 PROTECTED VENDOR MANAGEMENT ROUTES
+// PROTECTED VENDOR MANAGEMENT ROUTES
 // ==========================================
 
 // Vendor Onboarding: Register Profile & Upload Verification CNIC/Documents (Max 5 files)
