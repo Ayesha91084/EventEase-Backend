@@ -28,11 +28,11 @@ const notificationSchema = new mongoose.Schema({
     // Click action link/navigation help
     targetId: {
         type: mongoose.Schema.Types.ObjectId,
-        required: false // Booking ID ya Chat Room ID redirection ke liye
+        required: false // Booking ID ya Chat Room ID redirection
     }
 }, { timestamps: true });
 
-// 🚀 Indexing for fast Unread Notifications fetch
+//  Indexing for fast Unread Notifications fetch
 notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Notification', notificationSchema);

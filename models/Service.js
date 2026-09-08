@@ -35,7 +35,7 @@ const serviceSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-// 🚀 Fast Query Indexing (Fixed Index Mismatch)
+//  Fast Query Indexing (Fixed Index Mismatch)
 serviceSchema.index({ category: 1 }); // Category filter fast query
 serviceSchema.index({ price: 1 });    // Price sorting filter
 serviceSchema.index({ vendorId: 1 }); // Vendor specific services lookup

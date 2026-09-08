@@ -51,7 +51,7 @@ const paymentSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-// 🚀 Fast Financial Reporting Queries Indexing
+//  Fast Financial Reporting Queries Indexing
 paymentSchema.index({ bookingId: 1 });
 paymentSchema.index({ userId: 1 });
 paymentSchema.index({ vendorId: 1 });

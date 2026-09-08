@@ -5,7 +5,7 @@ const vendorProfileSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
-        unique: true // Ek user ka sirf ek hi vendor profile ho sakta hai
+        unique: true // one vendor profile for one user
     },
     businessName: {
         type: String,
@@ -29,7 +29,7 @@ const vendorProfileSchema = new mongoose.Schema({
         default: ""
     },
 
-    // 🚀 Task 4: Cloudinary Multi-Media Portfolio Arrays Validation
+    //  Task 4: Cloudinary Multi-Media Portfolio Arrays Validation
     portfolioImages: {
         type: [String],
         validate: [val => val.length <= 5, 'Maximum 5 portfolio images allowed.'],
@@ -84,7 +84,7 @@ const vendorProfileSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-// 🚀 Fast Filters & Spatial Search Indexing
+//  Fast Filters & Spatial Search Indexing
 vendorProfileSchema.index({ "location": "2dsphere" }); // Proximity location search
 vendorProfileSchema.index({ category: 1 });
 vendorProfileSchema.index({ status: 1 });

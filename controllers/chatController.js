@@ -1,8 +1,8 @@
 const Message = require('../models/Message');
 
-// ==========================================
+
 // 1. GET CHAT HISTORY (With Clean Pagination)
-// ==========================================
+
 // @route   GET /api/chat/room/:room
 const getChatHistory = async (req, res) => {
     try {
@@ -12,7 +12,7 @@ const getChatHistory = async (req, res) => {
             return res.status(400).json({ success: false, message: "Room ID/Name is required." });
         }
 
-        // 🛠️ Pagination Parameters Setup
+        // Pagination Parameters Setup
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const limit = Math.max(1, parseInt(req.query.limit) || 20);
         const skip = (page - 1) * limit;
@@ -44,9 +44,9 @@ const getChatHistory = async (req, res) => {
     }
 };
 
-// ==========================================
+
 // 2. SAVE MESSAGE (HTTP Backup Flow + Socket.io Emission)
-// ==========================================
+
 // @route   POST /api/chat/save
 const saveMessage = async (req, res) => {
     try {
@@ -69,7 +69,7 @@ const saveMessage = async (req, res) => {
 
         await newMessage.save();
 
-        // 🚀 Realtime Broadcast via Socket.io (if attached to Express App)
+        //  Realtime Broadcast via Socket.io (if attached to Express App)
         const io = req.app.get('io');
         if (io) {
             io.to(room).emit('receive_message', newMessage);
@@ -82,9 +82,9 @@ const saveMessage = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message });
     }
 };
-// ==========================================
+
 // 3. START OR GET CONVERSATION
-// ==========================================
+
 // @route   POST /api/chat/conversation
 const startConversation = async (req, res) => {
     try {
@@ -95,7 +95,7 @@ const startConversation = async (req, res) => {
             return res.status(400).json({ success: false, message: "Vendor ID is required." });
         }
 
-        // Aapke Message model ya ChatRoom model ke mutabiq room name ya ID generate ya find karna
+        
         const roomName = `room_${Math.min(customerId, vendorId)}_${Math.max(customerId, vendorId)}`;
 
         return res.status(200).json({

@@ -9,7 +9,7 @@ const doc = {
   host: 'localhost:5000',
   schemes: ['http', 'https'],
   
-  // 🔐 Bearer Security Definition
+  // Bearer Security Definition
   securityDefinitions: {
     bearerAuth: {
       type: 'apiKey',
@@ -39,5 +39,5 @@ const outputFile = './swagger-output.json';
 const endpointsFiles = ['./server.js'];
 
 swaggerAutogen(outputFile, endpointsFiles, doc).then(() => {
-  console.log("⚡ Swagger JSON file refreshed with Auth Support!");
+  console.log(" Swagger JSON file refreshed with Auth Support!");
 });

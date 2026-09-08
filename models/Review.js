@@ -5,7 +5,7 @@ const reviewSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'Booking', 
         required: true,
-        unique: true // Ek booking par sirf EK hi review submit ho sakta hai
+        unique: true // just one review submit on one booking
     },
     customerId: { 
         type: mongoose.Schema.Types.ObjectId, 

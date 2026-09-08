@@ -1,6 +1,6 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy_key');
 const Booking = require('../models/Booking');
-const Payment = require('../models/Payment'); // <-- Naya: Payment model import kiya
+const Payment = require('../models/Payment'); // <-- New: Payment model import
 
 // 1. Process Payment Controller
 const processPayment = async (req, res) => {
@@ -60,7 +60,7 @@ const processPayment = async (req, res) => {
 
         await targetBooking.save();
 
-        // 🚀 Naya: Payment Collection mein entry save karein taake history aur reports theek kaam karein
+        
         await Payment.create({
             bookingId: targetBooking._id,
             userId: req.body.userId || req.user?._id || req.user?.id || targetBooking.user || targetBooking.userId,

@@ -19,9 +19,9 @@ const getHandler = (fnName, defaultMsg) => {
     return (req, res) => res.status(200).json({ success: true, message: defaultMsg });
 };
 
-// ==========================================
-// 🛡️ ADMIN ROUTES (SAFE HANDLERS)
-// ==========================================
+
+//  ADMIN ROUTES (SAFE HANDLERS)
+
 
 // Dashboard Analytics / System Overview
 router.get('/dashboard', protect, getHandler('getAdminDashboard', 'Admin Dashboard Route Active'));

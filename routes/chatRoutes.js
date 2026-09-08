@@ -7,9 +7,8 @@ const { getChatHistory, saveMessage, startConversation } = require('../controlle
 // 2. Auth Middleware Import
 const { protect } = require('../middleware/authMiddleware');
 
-// ==========================================
-// 🛠️ CHAT ROUTES DEFINITION
-// ==========================================
+
+//  CHAT ROUTES DEFINITION
 
 // 1. Fetch Chat History Endpoint
 // #swagger.tags = ['Chat']

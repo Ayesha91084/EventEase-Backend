@@ -12,7 +12,7 @@ const adminLogSchema = new mongoose.Schema({
     },
     targetId: {
         type: mongoose.Schema.Types.ObjectId,
-        required: false // Jis target object (User/Vendor/Booking) par action liya gaya
+        required: false // (User/Vendor/Booking)  action on terget object
     },
     targetModel: {
         type: String, // Dynamic ref model: 'User', 'VendorProfile', 'Booking'
