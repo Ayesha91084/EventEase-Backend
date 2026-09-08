@@ -40,7 +40,7 @@ const createBooking = async (req, res) => {
         if (selectedDate < today) {
             return res.status(400).json({
                 success: false,
-                message: "Ghalti! Aap gujre hue kal (past date) ki booking nahi kar sakte. Baraye meherbani aane wali koi date select karein."
+                message: "Error! The app cannot accept for a past date.Please select an upcoming date."
             });
         }
 
