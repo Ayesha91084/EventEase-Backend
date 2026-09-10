@@ -42,3 +42,13 @@ Ye file frontend aur backend ki manual testing ka record hai.
 - Backend abhi  mara system se connect nahi ho raha (MongoDB IP whitelist issue) — testing partially blocked isi wajah se.
 - Photographers category (/photographer route) ek static demo page dikhata hai jo real vendor data se connect nahi hai — Asma se confirm karna hoga ke ye intentional placeholder hai ya isay dynamic banana baaki hai.
 - Photographers aur Decorators categories (/photographer aur /decorators routes) static/hardcoded demo vendors dikhate hain jo real Vendors page data se match nahi karte. Ye ek design pattern lagta hai (dono categories mein same tarah ka issue) — Asma se confirm karna hoga.
+
+
+## Recommendations for Team
+
+- Photographers aur Decorators pages (`Photographer.jsx`, `Decorators.jsx`) abhi `VendorsData.jsx` file se static/hardcoded dummy data use karte hain. Iske against, main Vendors listing page (`Venuepage.jsx`) sirf real backend API (`/vendors/search`) se live data fetch karti hai — is liye jab tak backend MongoDB se connect nahi hota, ye page hamesha khaali/"Getting things ready" dikhata hai.
+- **Decision needed:** Team ne decide kiya hai ke dummy data ko permanently hatana hai aur uski jagah real vendor accounts database mein add karne hain (dummy delete nahi karna abhi tak, kyunke Photographer/Decorators pages abhi bhi isi data pe depend hain).
+- **Iske liye 2 steps zaroori hain:**
+  1. Backend ko MongoDB se connect karna hoga (abhi bhi "CRITICAL: DB Connection Failed" error aa raha hai — MongoDB Atlas Network Access mein IP whitelist karna hoga, Ayesha ke access se).
+  2. Backend connect hone ke baad, 3-4 real vendor accounts Sign Up (Vendor role) se create karne honge taake Venuepage.jsx ko real data mil sake. Uske baad Photographer.jsx aur Decorators.jsx ko bhi is real data se connect karna hoga (abhi dummy data use kar rahe hain), aur `VendorsData.jsx` ko delete kiya ja sakta hai.
+- **Status:** Ye fix abhi testing scope se bahar hai (backend connectivity aur data-entry ka kaam hai) — isay backend/dev team ke sath discuss karna hoga.
