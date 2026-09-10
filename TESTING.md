@@ -52,6 +52,7 @@ Ye file frontend aur backend ki manual testing ka record hai.
 | 2026-09-10 | About Us - What People Say (Testimonials) | Content dekha | Static testimonial cards | Sahi load hue, static hain (koi interaction expected nahi) | ✅ Pass |
 | 2026-09-10 | About Us - Meet The Team Section | Team cards (Mahroosh, Ayesha Bibi, Asma Noreen) pe click kiya | Static content, koi navigation expected nahi | Cards static hain (koi interaction/profile link) | ✅ Pass |
 | 2026-09-10 | About Us - "Sign Up Free" CTA Button | Button click kiya | Sign Up page khulni chahiye | Sign Up page sahi khula | ✅ Pass |
+| 2026-09-10 | About Us Page - Mobile Responsive View | Mobile view (600px width) mein About Us page check kiya | Layout sahi adjust hona chahiye | Sab sections (Hero, Stats, Mission/Vision, Our Story, Services, Testimonials, Team, CTA) sahi responsive the | ✅ Pass |
 ## Fixes Applied
 - VendorProfile.jsx mein react-calendar aur react-leaflet packages missing the (git pull ke baad naye dependencies add hui thin lekin npm install nahi chalaya tha). Fix: npm install dobara chalaya.
 - Backend abhi mera system se MongoDB se connect nahi ho raha (IP whitelist issue) — is wajah se Sign Up, Login, aur database-dependent saare features test nahi ho sakte.
