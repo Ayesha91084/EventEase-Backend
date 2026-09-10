@@ -42,6 +42,13 @@ Ye file frontend aur backend ki manual testing ka record hai.
 | 2026-09-10 | Forgot Password - Empty Email | Email khaali chor kar Send Code click kiya | Validation error aana chahiye | "Please add registered email" jaisa message aaya | ✅ Pass |
 | 2026-09-10 | Login Form - Password Visibility | Eye icon dhoonda password field mein | - | Login form mein password show/hide option nahi hai (Sign Up form mein tha) | ℹ️ Note (minor inconsistency, not a bug) |
 | 2026-09-10 | About Us Page | Navbar se About Us click kiya | Page load ho, content sahi dikhe | Page sahi khula, content load hua | ✅ Pass |
+| 2026-09-10 | About Us - Stats Section (500+ Events, 50+ Venues, 10k+ Users, 4.8 Rating) | Page load hote waqt stats section dekha | Animated counter effect hona chahiye | Sahi kaam kiya - counter animate hota hai, sahi values pe settle hota hai | ✅ Pass |
+| 2026-09-10 | About Us - Our Mission & Vision Section | Content dekha | Static informational text hona chahiye | Sahi text load hua, static content hai (koi interaction expected nahi) | ✅ Pass |
+| 2026-09-10 | About Us - Our Story Section (Timeline) | Content dekha | Static informational timeline hona chahiye | Sahi text load hua, static hai (koi interaction expected nahi) | ✅ Pass |
+| 2026-09-10 | About Us - Our Services Section (4 cards) | Cards pe click/hover kiya | Static content, koi navigation expected nahi | Content static hai, cards hover pe zoom effect dikhate hain (UI polish) | ✅ Pass |
+| 2026-09-10 | About Us - What People Say (Testimonials) | Content dekha | Static testimonial cards | Sahi load hue, static hain (koi interaction expected nahi) | ✅ Pass |
+| 2026-09-10 | About Us - Meet The Team Section | Team cards (Mahroosh, Ayesha Bibi, Asma Noreen) pe click kiya | Static content, koi navigation expected nahi | Cards static hain (koi interaction/profile link) | ✅ Pass |
+| 2026-09-10 | About Us - "Sign Up Free" CTA Button | Button click kiya | Sign Up page khulni chahiye | Sign Up page sahi khula | ✅ Pass |
 ## Fixes Applied
 - VendorProfile.jsx mein react-calendar aur react-leaflet packages missing the (git pull ke baad naye dependencies add hui thin lekin npm install nahi chalaya tha). Fix: npm install dobara chalaya.
 - Backend abhi mera system se MongoDB se connect nahi ho raha (IP whitelist issue) — is wajah se Sign Up, Login, aur database-dependent saare features test nahi ho sakte.
