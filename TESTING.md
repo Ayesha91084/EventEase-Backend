@@ -8,6 +8,7 @@ Ye file frontend aur backend ki manual testing ka record hai.
 |------|----------------|-------|------------------|----------------|--------|
 | 2026-09-10 | Home Page | Home page open kiya | Content, images, buttons sahi load hon | Sab kuch sahi load hua | ✅ Pass |
 | 2026-09-10 | Home Page - Search Filter (Cascading Dropdowns) | Country, Province, City select kar ke Search click kiya | Cascading logic sahi kaam kare (Province disabled bina Country ke, City disabled bina Province ke), Search se Vendors page khule | Sab sahi kaam kiya — Country select na hone tak Province/City disabled the, Province select karne pe Cities show hui, Search se Vendors page (venues ke sath) khula, Country/Province change karne pe neeche wale dropdowns reset ho gaye | ✅ Pass |
+| 2026-09-10 | Home Page - "View All Vendors" Link | "View All Vendors" link click kiya | Vendors page khulna chahiye | Vendors page sahi khula (data khaali hai, vendors abhi add nahi hue) | ✅ Pass |
 | 2026-09-10 | Services Page | Navbar se Services click kiya | Services data dikhna chahiye | Data sahi dikha | ✅ Pass |
 | 2026-09-10 | Vendors Page | Navbar se Vendors click kiya | Vendors list dikhni chahiye | (yahan result likhein) | |
 | 2026-09-10 | Vendors Page | Navbar se Vendors click kiya | Vendors list dikhni chahiye | Page sahi load hua, list khaali hai (data/vendors add nahi hain abhi) | ✅ Pass |
