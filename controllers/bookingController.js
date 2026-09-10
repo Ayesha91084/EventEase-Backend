@@ -40,7 +40,7 @@ const createBooking = async (req, res) => {
         if (selectedDate < today) {
             return res.status(400).json({
                 success: false,
-                message: "Ghalti! Aap gujre hue kal (past date) ki booking nahi kar sakte. Baraye meherbani aane wali koi date select karein."
+                message: "Error! The app cannot accept for a past date.Please select an upcoming date."
             });
         }
 
@@ -62,7 +62,7 @@ const createBooking = async (req, res) => {
         if (existingBooking) {
             return res.status(400).json({
                 success: false,
-                message: "Date Unavailable: Yeh vendor is tareekh par pehle se booked hai!"
+                message: "Date Unavailable: This vendor is already bookied on this date.!"
             });
         }
 
@@ -108,7 +108,7 @@ const getVendorBookings = async (req, res) => {
 
         // Calculate total earnings from accepted/completed bookings
         const totalEarnings = bookings
-            .filter(b => b.status === 'accepted' || b.status === 'done')
+            .filter(b => b.status === 'accepted' || b.status === 'completed')
             .reduce((sum, item) => sum + (Number(item.totalAmount) || 0), 0);
         
         res.status(200).json({
@@ -130,7 +130,7 @@ const updateBookingStatus = async (req, res) => {
         const id = req.params.id || req.params.bookingId;
         const { status } = req.body; 
 
-        if (!['accepted', 'rejected', 'done', 'pending'].includes(status)) {
+        if (!['accepted', 'rejected',  'completed', 'pending'].includes(status)) {
             return res.status(400).json({ success: false, message: "Invalid status value." });
         }
 
