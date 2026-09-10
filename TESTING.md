@@ -9,7 +9,12 @@ Ye file frontend aur backend ki manual testing ka record hai.
 | 2026-09-10 | Home Page | Home page open kiya | Content, images, buttons sahi load hon | Sab kuch sahi load hua | ✅ Pass |
 | 2026-09-10 | Home Page - Search Filter (Cascading Dropdowns) | Country, Province, City select kar ke Search click kiya | Cascading logic sahi kaam kare (Province disabled bina Country ke, City disabled bina Province ke), Search se Vendors page khule | Sab sahi kaam kiya — Country select na hone tak Province/City disabled the, Province select karne pe Cities show hui, Search se Vendors page (venues ke sath) khula, Country/Province change karne pe neeche wale dropdowns reset ho gaye | ✅ Pass |
 | 2026-09-10 | Home Page - "View All Vendors" Link | "View All Vendors" link click kiya | Vendors page khulna chahiye | Vendors page sahi khula (data khaali hai, vendors abhi add nahi hue) | ✅ Pass |
+| 2026-09-10 | Services Page - Search Bar | "photographer" likh kar Search button click kiya | Search results dikhne chahiye | Pehle button static tha (onClick missing), FIXED: ab Vendors page pe navigate karta hai search text ke sath | ✅ Pass (Fixed) |
 | 2026-09-10 | Services Page | Navbar se Services click kiya | Services data dikhna chahiye | Data sahi dikha | ✅ Pass |
+| 2026-09-10 | Services - Category: Venues & Halls | Venues & Halls icon click kiya | Vendors page khulna chahiye | Vendors page sahi khula | ✅ Pass |
+| 2026-09-10 | Services - Category: Marquees | Marquees icon click kiya | Vendors page khulna chahiye | Vendors page sahi khula | ✅ Pass |
+| 2026-09-10 | Services - Category: Photographers | Photographers icon click kiya | Photographers ki real list ya vendors page pe filtered results aane chahiye | Ek static/hardcoded demo vendor page khula ("Royal Marquee Gardens", "Demo mode active" likha hua) jo Vendors page ki real listing se match nahi karta | ❌ Fail (Static/demo data, not connected to real vendor data — inconsistent with actual Vendors listing) |
+| 2026-09-10 | Services - Category: Decorators | Decorators icon click kiya | Decorators ki real list ya Vendors page se match honi chahiye | Static/hardcoded demo vendor dikha ("Hanif Rajput Design", 1 decorator available) jo Vendors page ki khaali listing se match nahi karta | ❌ Fail (Same pattern as Photographers — static demo data, not synced with real Vendors data) |
 | 2026-09-10 | Vendors Page | Navbar se Vendors click kiya | Vendors list dikhni chahiye | (yahan result likhein) | |
 | 2026-09-10 | Vendors Page | Navbar se Vendors click kiya | Vendors list dikhni chahiye | Page sahi load hua, list khaali hai (data/vendors add nahi hain abhi) | ✅ Pass |
 | 2026-09-10 | Sign Up Form - Empty Submit | Sab fields khaali chor kar Create Account click kiya | Error/validation message aana chahiye | "Please fill out this form" message aaya (browser validation) | ✅ Pass |
@@ -30,8 +35,10 @@ Ye file frontend aur backend ki manual testing ka record hai.
 - VendorProfile.jsx mein react-calendar aur react-leaflet packages missing the (git pull ke baad naye dependencies add hui thin lekin npm install nahi chalaya tha). Fix: npm install dobara chalaya.
 - Backend abhi mera system se MongoDB se connect nahi ho raha (IP whitelist issue) — is wajah se Sign Up, Login, aur database-dependent saare features test nahi ho sakte.
 - Google OAuth "Error 400: origin_mismatch": localhost:5173 ko Google Cloud Console mein Authorized JavaScript Origins mein add karna hoga (jisne bhi Google OAuth setup kiya, unse contact karna hoga).
-
+- Services page ka Search button kaam nahi kar raha tha kyunke onClick handler missing tha. Fix: navigate() function add kiya jo Vendors page pe le jata hai search query ke sath.
 
 ## Known Issues
 
 - Backend abhi  mara system se connect nahi ho raha (MongoDB IP whitelist issue) — testing partially blocked isi wajah se.
+- Photographers category (/photographer route) ek static demo page dikhata hai jo real vendor data se connect nahi hai — Asma se confirm karna hoga ke ye intentional placeholder hai ya isay dynamic banana baaki hai.
+- Photographers aur Decorators categories (/photographer aur /decorators routes) static/hardcoded demo vendors dikhate hain jo real Vendors page data se match nahi karte. Ye ek design pattern lagta hai (dono categories mein same tarah ka issue) — Asma se confirm karna hoga.
