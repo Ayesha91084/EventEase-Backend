@@ -76,3 +76,13 @@ Ye file frontend aur backend ki manual testing ka record hai.
   1. Backend ko MongoDB se connect karna hoga (abhi bhi "CRITICAL: DB Connection Failed" error aa raha hai — MongoDB Atlas Network Access mein IP whitelist karna hoga, Ayesha ke access se).
   2. Backend connect hone ke baad, 3-4 real vendor accounts Sign Up (Vendor role) se create karne honge taake Venuepage.jsx ko real data mil sake. Uske baad Photographer.jsx aur Decorators.jsx ko bhi is real data se connect karna hoga (abhi dummy data use kar rahe hain), aur `VendorsData.jsx` ko delete kiya ja sakta hai.
 - **Status:** Ye fix abhi testing scope se bahar hai (backend connectivity aur data-entry ka kaam hai) — isay backend/dev team ke sath discuss karna hoga.
+## Vendor Panel Testing
+
+| Date | Feature Tested | Steps | Expected Result | Actual Result | Status |
+|------|----------------|-------|------------------|----------------|--------|
+| 2026-09-12 | Vendor Login - Google Sign In | Signed in with Google, selected Vendor role | Vendor dashboard should open | Successfully signed in, vendor account created | ✅ Pass |
+## Fixes Applied
+- (yahan likhein agar koi fix kiya)
+
+## Known Issues
+- Update: The Google OAuth origin_mismatch issue has been resolved — Google Sign In worked successfully during vendor panel testing (2026-09-12).
