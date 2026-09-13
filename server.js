@@ -23,8 +23,21 @@ try {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const allowedOrigins = [
+    'https://eventease.online',
+    'https://www.eventease.online',
+    'http://localhost:5173',
+    'http://localhost:3000'
+];
+
 app.use(cors({
-    origin: '*', 
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.includes('vercel.app')) {
+            callback(null, true);
+        } else {
+            callback(null, true); 
+        }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
@@ -62,7 +75,11 @@ app.get("/", (req, res) => {
 // 6. HTTP Server & Real-Time Socket.IO Binding
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"], credentials: true }
+    cors: { 
+        origin: ["https://eventease.online", "https://www.eventease.online", "http://localhost:5173", "http://localhost:3000", "*"], 
+        methods: ["GET", "POST"], 
+        credentials: true 
+    }
 });
 
 // Live Chat Socket Handlers
