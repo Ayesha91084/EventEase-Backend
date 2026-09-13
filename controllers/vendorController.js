@@ -3,12 +3,10 @@ const Vendor = require('../models/VendorProfile');
 const User = require('../models/User');
 const Category = require('../models/Category');
 
-
-//  1. PROFILE PICTURE UPLOAD CONTROLLER (CLOUDINARY)
-
+// 1. PROFILE PICTURE UPLOAD CONTROLLER
 const uploadProfilePicture = async (req, res) => {
   try {
-    const { vendorId } = req.params;
+    const vendorId = req.params.vendorId || req.user?.vendorId;
 
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
@@ -20,11 +18,19 @@ const uploadProfilePicture = async (req, res) => {
       folder: 'EventEase/vendors/profiles',
     });
 
-    const updatedVendor = await Vendor.findByIdAndUpdate(
+    let updatedVendor = await Vendor.findByIdAndUpdate(
       vendorId,
       { profileImage: uploadResponse.secure_url },
       { new: true }
-    ).populate('category', 'name description icon');
+    );
+
+    if (!updatedVendor && req.user?._id) {
+      updatedVendor = await Vendor.findOneAndUpdate(
+        { userId: req.user._id },
+        { profileImage: uploadResponse.secure_url },
+        { new: true }
+      );
+    }
 
     return res.status(200).json({
       success: true,
@@ -38,20 +44,17 @@ const uploadProfilePicture = async (req, res) => {
   }
 };
 
-
-//  2. VENDOR REGISTRATION CONTROLLER (WITH CLOUDINARY UPLOAD)
-
+// 2. VENDOR REGISTRATION CONTROLLER
 const registerVendor = async (req, res) => {
     try {
         const { userId, user, businessName, businessType, category, country, state, city, address, description, documents } = req.body;
         
-        const targetUserId = req.user?.id || req.user?._id || userId || user || req.body.user;
+        const targetUserId = req.user?.id || req.user?._id || userId || user;
 
         if (!targetUserId) {
             return res.status(400).json({ success: false, message: "User ID is required for vendor registration." });
         }
 
-        // Prevent Duplicate Vendor Profiles
         const existingVendor = await Vendor.findOne({ userId: targetUserId });
         if (existingVendor) {
             return res.status(400).json({ success: false, message: "Vendor profile already exists for this account." });
@@ -59,7 +62,6 @@ const registerVendor = async (req, res) => {
 
         let documentUrls = [];
 
-        // Upload documents/CNIC via Cloudinary
         if (req.files && req.files.length > 0) {
             for (const file of req.files) {
                 const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
@@ -85,18 +87,16 @@ const registerVendor = async (req, res) => {
             address: address || "Main Bazaar" 
         };
 
-        // Update User Role to Vendor
         const userCheck = await User.findById(targetUserId);
         if (userCheck) {
             userCheck.role = 'vendor';
-            userCheck.isVerified = false; // Admin Approval Required
+            userCheck.isVerified = false;
             await userCheck.save();
         }
 
-        // Selected Category ObjectId validation check
         const selectedCategory = businessType || category;
         if (!selectedCategory) {
-            return res.status(400).json({ success: false, message: "Category ObjectId is required for vendor profile." });
+            return res.status(400).json({ success: false, message: "Category is required for vendor profile." });
         }
 
         const newVendor = new Vendor({
@@ -112,7 +112,6 @@ const registerVendor = async (req, res) => {
 
         await newVendor.save();
 
-        // Populate category so frontend gets the category object instead of an ID string
         const populatedVendor = await Vendor.findById(newVendor._id)
             .populate('userId', 'name email')
             .populate('category', 'name description icon');
@@ -133,9 +132,7 @@ const registerVendor = async (req, res) => {
     }
 };
 
-
-//  3. GET LOGGED-IN VENDOR PROFILE (AUTHENTICATED & DYNAMIC SAFE)
-
+// 3. GET LOGGED-IN VENDOR PROFILE
 const getVendorProfile = async (req, res) => {
   try {
     const userId = req.params.userId || req.user?.id || req.user?._id || req.query.userId;
@@ -172,9 +169,7 @@ const getVendorProfile = async (req, res) => {
   }
 };
 
-
-//  4. UPDATE VENDOR PROFILE DATA
-
+// 4. UPDATE VENDOR PROFILE DATA
 const updateVendorProfile = async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || req.body.userId;
@@ -209,9 +204,7 @@ const updateVendorProfile = async (req, res) => {
   }
 };
 
-
-//  5. COORDINATES MAP GENERATOR
-
+// 5. COORDINATES MAP GENERATOR
 const updateVendorLocation = async (req, res) => {
     try {
         const { latitude, longitude } = req.body;
@@ -254,9 +247,7 @@ const updateVendorLocation = async (req, res) => {
     }
 };
 
-
-//  6. SEARCH VENDORS BY LOCATION (Placeholder for completeness)
-
+// 6. SEARCH VENDORS BY LOCATION
 const searchVendorsByLocation = async (req, res) => {
     try {
         const { city, category } = req.query;
@@ -279,9 +270,7 @@ const searchVendorsByLocation = async (req, res) => {
     }
 };
 
-
-//  7. GET ALL VENDORS (PUBLIC)
-
+// 7. GET ALL VENDORS
 const getAllVendors = async (req, res) => {
     try {
         const vendors = await Vendor.find({ isVerified: true })
@@ -298,13 +287,10 @@ const getAllVendors = async (req, res) => {
     }
 };
 
-
-// 8. GET VENDOR BY ID (PUBLIC)
-
+// 8. GET VENDOR BY ID
 const getVendorById = async (req, res) => {
     try {
         const { id } = req.params;
-        // ✨ Added category populate here so ID string doesn't get returned
         const vendor = await Vendor.findById(id)
             .populate('userId', 'name email')
             .populate('category', 'name description icon');
@@ -322,13 +308,15 @@ const getVendorById = async (req, res) => {
     }
 };
 
-
-//  9. PORTFOLIO MULTI-MEDIA UPLOAD
-
+// 9. PORTFOLIO MULTI-MEDIA UPLOAD (MAX 5 IMAGES, MAX 3 VIDEOS)
 const uploadPortfolioMedia = async (req, res) => {
     try {
         const { vendorId } = req.params;
-        const vendor = await Vendor.findById(vendorId);
+        let vendor = await Vendor.findById(vendorId);
+
+        if (!vendor && req.user?._id) {
+            vendor = await Vendor.findOne({ userId: req.user._id });
+        }
 
         if (!vendor) {
             return res.status(404).json({ success: false, message: "Vendor profile not found" });
@@ -393,15 +381,18 @@ const uploadPortfolioMedia = async (req, res) => {
     }
 };
 
-
-//  10. DELETE PORTFOLIO MEDIA
-
+// 10. DELETE PORTFOLIO MEDIA
 const deletePortfolioMedia = async (req, res) => {
   try {
     const { vendorId } = req.params;
     const { mediaUrl, type } = req.body;
 
-    const vendor = await Vendor.findById(vendorId);
+    let vendor = await Vendor.findById(vendorId);
+
+    if (!vendor && req.user?._id) {
+      vendor = await Vendor.findOne({ userId: req.user._id });
+    }
+
     if (!vendor) {
       return res.status(404).json({ success: false, message: "Vendor profile not found" });
     }
@@ -426,9 +417,7 @@ const deletePortfolioMedia = async (req, res) => {
   }
 };
 
-
-//  11. CATEGORY MANAGEMENT CONTROLLERS
-
+// 11. CATEGORY MANAGEMENT CONTROLLERS
 const getCategories = async (req, res) => {
     try {
         const categories = await Category.find({ isActive: true });
