@@ -82,8 +82,12 @@ Ye file frontend aur backend ki manual testing ka record hai.
 |------|----------------|-------|------------------|----------------|--------|
 | 2026-09-12 | Vendor Login - Google Sign In | Signed in with Google, selected Vendor role | Vendor dashboard should open | Successfully signed in, vendor account created | ✅ Pass |
 | 2026-09-12 | Vendor Login (Email/Password) | Entered registered vendor email and password, clicked Login | Vendor should be logged in and redirected to dashboard | Login successful, redirected to vendor dashboard | ✅ Pass |
+| 2026-09-13 | Vendor Registration - Business/Brand Name field | Typed text in Business/Brand Name field | Typed text should be clearly visible while typing | Text was invisible while typing (white/light text on light background) — confirmed via Ctrl+A that text was actually entered correctly, just not visible | ❌ Fail (CSS bug) |
+| 2026-09-13 | Vendor Registration Form - All Fields (Retest after fix) | Typed text in all input fields and selected Business Category dropdown | Typed text should be clearly visible | Text is now clearly visible in all input fields and dropdown | ✅ Pass (Fixed) |
 ## Fixes Applied
-- (yahan likhein agar koi fix kiya)
+## Fixes Applied
+- Vendor Registration form had a CSS bug where typed text was invisible (text color was not set, blending with the background) across all input fields and the Business Category dropdown. Fixed by adding `color: #2b2319;` to the input/textarea rule in VendorRegistrationform.css and to the inline style of the category `<select>` in VendorRegistrationform.jsx.
 
 ## Known Issues
 - Update: The Google OAuth origin_mismatch issue has been resolved — Google Sign In worked successfully during vendor panel testing (2026-09-12).
+- Vendor Registration form text visibility bug — resolved (2026-09-13). See Fixes Applied section.
