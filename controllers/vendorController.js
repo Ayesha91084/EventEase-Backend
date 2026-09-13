@@ -3,12 +3,90 @@ const Vendor = require('../models/VendorProfile');
 const User = require('../models/User');
 const Category = require('../models/Category');
 
-// 1. UPDATE VENDOR PROFILE DETAILS
+// 1. GET ALL APPROVED VENDORS (PUBLIC FRONTEND)
+const getAllVendors = async (req, res) => {
+  try {
+    const vendors = await Vendor.find({ isVerified: true }).populate('userId', 'name email');
+    return res.status(200).json({
+      success: true,
+      data: vendors,
+      vendors: vendors
+    });
+  } catch (error) {
+    console.error("Get All Vendors Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch vendors", error: error.message });
+  }
+};
+
+// 2. GET PENDING VENDORS (ADMIN NOTIFICATIONS & APPROVALS)
+const getPendingVendors = async (req, res) => {
+  try {
+    const pendingVendors = await Vendor.find({ 
+      $or: [
+        { isVerified: false }, 
+        { status: 'pending' }, 
+        { isApproved: false }
+      ] 
+    }).populate('userId', 'name email');
+
+    return res.status(200).json({
+      success: true,
+      count: pendingVendors.length,
+      data: pendingVendors,
+      vendors: pendingVendors
+    });
+  } catch (error) {
+    console.error("Get Pending Vendors Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch pending vendors", error: error.message });
+  }
+};
+
+// 3. APPROVE VENDOR
+const approveVendor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vendor = await Vendor.findByIdAndUpdate(
+      id, 
+      { isVerified: true, status: 'approved', isApproved: true }, 
+      { new: true }
+    );
+
+    if (!vendor) {
+      return res.status(404).json({ success: false, message: "Vendor not found." });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Vendor approved and published to website successfully!",
+      data: vendor
+    });
+  } catch (error) {
+    console.error("Approve Vendor Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to approve vendor", error: error.message });
+  }
+};
+
+// 4. REJECT VENDOR
+const rejectVendor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Vendor.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Vendor application rejected and removed."
+    });
+  } catch (error) {
+    console.error("Reject Vendor Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to reject vendor", error: error.message });
+  }
+};
+
+// 5. UPDATE VENDOR PROFILE DETAILS
 const updateVendorProfile = async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || req.body.userId;
     const vendorId = req.body.vendorId;
-
     const { businessName, category, phone, city, address, description } = req.body;
 
     const updatedData = {};
@@ -20,21 +98,12 @@ const updateVendorProfile = async (req, res) => {
     if (category) updatedData.category = category;
 
     let updatedVendor = null;
-
     if (vendorId && vendorId !== 'me') {
-      updatedVendor = await Vendor.findByIdAndUpdate(
-        vendorId,
-        { $set: updatedData },
-        { new: true, runValidators: false }
-      );
+      updatedVendor = await Vendor.findByIdAndUpdate(vendorId, { $set: updatedData }, { new: true });
     }
 
     if (!updatedVendor && userId) {
-      updatedVendor = await Vendor.findOneAndUpdate(
-        { userId },
-        { $set: updatedData },
-        { new: true, runValidators: false }
-      );
+      updatedVendor = await Vendor.findOneAndUpdate({ userId }, { $set: updatedData }, { new: true });
     }
 
     if (!updatedVendor) {
@@ -52,7 +121,7 @@ const updateVendorProfile = async (req, res) => {
   }
 };
 
-// 2. PROFILE PICTURE UPLOAD CONTROLLER
+// 6. UPLOAD PROFILE PICTURE
 const uploadProfilePicture = async (req, res) => {
   try {
     const vendorId = req.params.vendorId;
@@ -63,26 +132,17 @@ const uploadProfilePicture = async (req, res) => {
     }
 
     const fileBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-
     const uploadResponse = await cloudinary.uploader.upload(fileBase64, {
       folder: 'EventEase/vendors/profiles',
     });
 
     let updatedVendor = null;
     if (vendorId && vendorId !== 'me') {
-      updatedVendor = await Vendor.findByIdAndUpdate(
-        vendorId,
-        { profileImage: uploadResponse.secure_url },
-        { new: true }
-      );
+      updatedVendor = await Vendor.findByIdAndUpdate(vendorId, { profileImage: uploadResponse.secure_url }, { new: true });
     }
 
     if (!updatedVendor && userId) {
-      updatedVendor = await Vendor.findOneAndUpdate(
-        { userId },
-        { profileImage: uploadResponse.secure_url },
-        { new: true }
-      );
+      updatedVendor = await Vendor.findOneAndUpdate({ userId }, { profileImage: uploadResponse.secure_url }, { new: true });
     }
 
     return res.status(200).json({
@@ -97,70 +157,69 @@ const uploadProfilePicture = async (req, res) => {
   }
 };
 
-// 3. PORTFOLIO MULTI-MEDIA UPLOAD
+// 7. PORTFOLIO MULTI-MEDIA UPLOAD
 const uploadPortfolioMedia = async (req, res) => {
-    try {
-        const { vendorId } = req.params;
-        const userId = req.user?.id || req.user?._id;
+  try {
+    const { vendorId } = req.params;
+    const userId = req.user?.id || req.user?._id;
 
-        let vendor = null;
-        if (vendorId && vendorId !== 'me') {
-            vendor = await Vendor.findById(vendorId);
-        }
-
-        if (!vendor && userId) {
-            vendor = await Vendor.findOne({ userId });
-        }
-
-        if (!vendor) {
-            return res.status(404).json({ success: false, message: "Vendor profile not found" });
-        }
-
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ success: false, message: "No media files uploaded" });
-        }
-
-        let images = vendor.portfolioImages || [];
-        let videos = vendor.portfolioVideos || [];
-
-        for (const file of req.files) {
-            const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-            const isVideo = file.mimetype.startsWith('video');
-
-            if (isVideo) {
-                if (videos.length >= 3) continue;
-                const uploadRes = await cloudinary.uploader.upload(fileBase64, {
-                    resource_type: 'video',
-                    folder: 'EventEase/vendors/portfolio/videos',
-                });
-                videos.push(uploadRes.secure_url);
-            } else {
-                if (images.length >= 5) continue;
-                const uploadRes = await cloudinary.uploader.upload(fileBase64, {
-                    folder: 'EventEase/vendors/portfolio/images',
-                });
-                images.push(uploadRes.secure_url);
-            }
-        }
-
-        vendor.portfolioImages = images;
-        vendor.portfolioVideos = videos;
-        await vendor.save();
-
-        return res.status(200).json({
-            success: true,
-            message: "Portfolio media updated successfully!",
-            portfolioImages: vendor.portfolioImages,
-            portfolioVideos: vendor.portfolioVideos
-        });
-
-    } catch (error) {
-        console.error("Portfolio Upload Error:", error);
-        return res.status(500).json({ success: false, message: "Media upload failed", error: error.message });
+    let vendor = null;
+    if (vendorId && vendorId !== 'me') {
+      vendor = await Vendor.findById(vendorId);
     }
+
+    if (!vendor && userId) {
+      vendor = await Vendor.findOne({ userId });
+    }
+
+    if (!vendor) {
+      return res.status(404).json({ success: false, message: "Vendor profile not found" });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: "No media files uploaded" });
+    }
+
+    let images = vendor.portfolioImages || [];
+    let videos = vendor.portfolioVideos || [];
+
+    for (const file of req.files) {
+      const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      const isVideo = file.mimetype.startsWith('video');
+
+      if (isVideo) {
+        if (videos.length >= 3) continue;
+        const uploadRes = await cloudinary.uploader.upload(fileBase64, {
+          resource_type: 'video',
+          folder: 'EventEase/vendors/portfolio/videos',
+        });
+        videos.push(uploadRes.secure_url);
+      } else {
+        if (images.length >= 5) continue;
+        const uploadRes = await cloudinary.uploader.upload(fileBase64, {
+          folder: 'EventEase/vendors/portfolio/images',
+        });
+        images.push(uploadRes.secure_url);
+      }
+    }
+
+    vendor.portfolioImages = images;
+    vendor.portfolioVideos = videos;
+    await vendor.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Portfolio media updated successfully!",
+      portfolioImages: vendor.portfolioImages,
+      portfolioVideos: vendor.portfolioVideos
+    });
+  } catch (error) {
+    console.error("Portfolio Upload Error:", error);
+    return res.status(500).json({ success: false, message: "Media upload failed", error: error.message });
+  }
 };
 
-// 4. DELETE PORTFOLIO MEDIA
+// 8. DELETE PORTFOLIO MEDIA
 const deletePortfolioMedia = async (req, res) => {
   try {
     const { vendorId } = req.params;
@@ -200,7 +259,7 @@ const deletePortfolioMedia = async (req, res) => {
   }
 };
 
-// OTHER HELPER CONTROLLERS
+// HELPER CONTROLLERS
 const registerVendor = async (req, res) => { /* logic */ };
 const getVendorProfile = async (req, res) => {
   try {
@@ -218,22 +277,32 @@ const getVendorProfile = async (req, res) => {
 };
 const updateVendorLocation = async (req, res) => { /* logic */ };
 const searchVendorsByLocation = async (req, res) => { /* logic */ };
-const getAllVendors = async (req, res) => { /* logic */ };
-const getVendorById = async (req, res) => { /* logic */ };
+const getVendorById = async (req, res) => {
+  try {
+    const vendor = await Vendor.findById(req.params.id);
+    if (!vendor) return res.status(404).json({ success: false, message: "Vendor not found" });
+    return res.status(200).json({ success: true, vendor });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
 const getCategories = async (req, res) => { /* logic */ };
 const createCategory = async (req, res) => { /* logic */ };
 
-module.exports = { 
-  uploadProfilePicture, 
-  registerVendor, 
-  getVendorProfile,      
-  updateVendorProfile,   
-  updateVendorLocation, 
-  searchVendorsByLocation,
+module.exports = {
   getAllVendors,
-  getVendorById,
+  getPendingVendors,
+  approveVendor,
+  rejectVendor,
+  updateVendorProfile,
+  uploadProfilePicture,
   uploadPortfolioMedia,
   deletePortfolioMedia,
-  getCategories,  
-  createCategory 
+  registerVendor,
+  getVendorProfile,
+  updateVendorLocation,
+  searchVendorsByLocation,
+  getVendorById,
+  getCategories,
+  createCategory
 };
