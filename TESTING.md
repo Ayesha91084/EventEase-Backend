@@ -81,6 +81,7 @@ Ye file frontend aur backend ki manual testing ka record hai.
 | Date | Feature Tested | Steps | Expected Result | Actual Result | Status |
 |------|----------------|-------|------------------|----------------|--------|
 | 2026-09-12 | Vendor Login - Google Sign In | Signed in with Google, selected Vendor role | Vendor dashboard should open | Successfully signed in, vendor account created | ✅ Pass |
+| 2026-09-12 | Vendor Login (Email/Password) | Entered registered vendor email and password, clicked Login | Vendor should be logged in and redirected to dashboard | Login successful, redirected to vendor dashboard | ✅ Pass |
 ## Fixes Applied
 - (yahan likhein agar koi fix kiya)
 
