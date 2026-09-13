@@ -16,7 +16,8 @@ const transporter = nodemailer.createTransport({
 
 // 1. SIGNUP API (For Public Customers/Vendors)
 
-const signup = async (req, res, next) => {
+
+        const signup = async (req, res, next) => {
     try {
         const { name, email, password, role, city, address, description, phone } = req.body;
 
@@ -32,7 +33,6 @@ const signup = async (req, res, next) => {
 
         let assignedRole = role === 'vendor' ? 'vendor' : 'customer';
 
-        // Manual Hashing ( when no pre save hook in User.js)
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -62,6 +62,18 @@ const signup = async (req, res, next) => {
         }
 
         await user.save();
+
+        // Send OTP email
+        try {
+            await transporter.sendMail({
+                from: `"EventEase Support" <${process.env.EMAIL_USER || "fyp20222026@gmail.com"}>`,
+                to: email,
+                subject: 'EventEase - Verify Your Email',
+                html: `<h3>Your OTP Code: <b>${otp}</b></h3><p>This code will expire in 10 minutes.</p>`
+            });
+        } catch (mErr) {
+            console.error("Signup Mail Send Error:", mErr.message);
+        }
 
         return res.status(201).json({ 
             success: true,
