@@ -91,3 +91,4 @@ Ye file frontend aur backend ki manual testing ka record hai.
 ## Known Issues
 - Update: The Google OAuth origin_mismatch issue has been resolved — Google Sign In worked successfully during vendor panel testing (2026-09-12).
 - Vendor Registration form text visibility bug — resolved (2026-09-13). See Fixes Applied section.
+- **Blocked:** Category ID (instead of name) still showing on live Vercel site for Vendor Registration, Vendor Profile, and Vendors listing pages. Local code fixes (categoriesMap lookup) have been applied and pushed to GitHub, but live backend on Render (eventease-backend-1-ptzp.onrender.com) appears to not be reflecting the latest deployment. Needs Ayesha's Render access to verify/trigger deployment. Also seeing multiple 404 errors on live site for bookings/reviews endpoints (vendor/6aa4e48...) — needs backend route verification once Render access is available.
