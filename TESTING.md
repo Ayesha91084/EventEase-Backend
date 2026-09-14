@@ -88,6 +88,7 @@ Ye file frontend aur backend ki manual testing ka record hai.
 | 2026-09-14 | Vendor Dashboard - Overview | Logged in via Google as vendor, viewed Overview page | Dashboard should show stats (revenue, bookings, rating, etc.) without errors | Overview page loaded correctly showing Gross Revenue Rs.0, Incoming Requests 00, Total Bookings 00, Overall Rating 4.9, Booking Metrics 0/0 (expected empty state for new vendor) | ✅ Pass |
 | 2026-09-14 | Vendor Dashboard - My Bookings | Clicked "My Bookings" from sidebar | Bookings list should load without errors (empty for new vendor) | Page loaded correctly showing "No bookings recorded in the system." | ✅ Pass |
 | 2026-09-14 | Vendor Profile - Portfolio Image Upload | Clicked "+ Upload Portfolio Media", selected 2 images | Images should upload successfully and display in Photos section | 2 images uploaded successfully | ✅ Pass |
+| 2026-09-14 | Vendor Profile - Portfolio Video Upload | Clicked "+ Upload Portfolio Media", selected a short video | Video should upload successfully and display in Videos section | Video uploaded successfully | ✅ Pass |
 ## Fixes Applied
 - Vendor Registration form had a CSS bug where typed text was invisible (text color was not set, blending with the background) across all input fields and the Business Category dropdown. Fixed by adding `color: #2b2319;` to the input/textarea rule in VendorRegistrationform.css and to the inline style of the category `<select>` in VendorRegistrationform.jsx.
 
