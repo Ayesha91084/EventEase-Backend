@@ -97,7 +97,8 @@ Ye file frontend aur backend ki manual testing ka record hai.
 - Vendor Registration form had a CSS bug where typed text was invisible (text color was not set, blending with the background) across all input fields and the Business Category dropdown. Fixed by adding `color: #2b2319;` to the input/textarea rule in VendorRegistrationform.css and to the inline style of the category `<select>` in VendorRegistrationform.jsx.
 | 2026-09-14 | Booking Page - Input Fields Text Visibility | Typed text in booking form input field(s) | Typed text should be clearly visible | Text color is white/invisible against the background, same issue as seen in Vendor Registration form | ❌ Fail (CSS bug - text color not set) |
 - Booking form (BookingDetails.css) had the same text visibility CSS bug — typed text was invisible in input fields. Fixed by adding `color: #111827;` to the `.form-group input, select, textarea` rule.
-
+| 2026-09-14 | Booking Flow - Complete (Details → Package → Payment) | Filled booking details, selected package, completed payment/billing step | Booking should complete successfully with confirmation | Booking completed successfully, confirmation notification received | ✅ Pass |
+| 2026-09-14 | Booking Form - Dropdown Dark Mode Visibility (Retest after fix) | Checked Event Type and City dropdowns in dark mode | Dropdown text should be visible regardless of system theme | Text now clearly visible with white background force-set via CSS | ✅ Pass (Fixed) |
 ## Known Issues
 - Update: The Google OAuth origin_mismatch issue has been resolved — Google Sign In worked successfully during vendor panel testing (2026-09-12).
 - Vendor Registration form text visibility bug — resolved (2026-09-13). See Fixes Applied section.
