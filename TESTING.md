@@ -101,6 +101,7 @@ Ye file frontend aur backend ki manual testing ka record hai.
 | 2026-09-14 | Booking Form - Dropdown Dark Mode Visibility (Retest after fix) | Checked Event Type and City dropdowns in dark mode | Dropdown text should be visible regardless of system theme | Text now clearly visible with white background force-set via CSS | ✅ Pass (Fixed) |
 | 2026-09-14 | Booking Payment - Advance Payment Processing | Customer completed advance payment step in booking flow | Payment should process and confirm within reasonable time | Payment stuck on "Processing..." for 2-3+ minutes — likely related to Render backend slowness (same pattern as OTP/chat delays) | ❌ Fail (Slow/hanging backend response, needs Render performance investigation) |
 | 2026-09-14 | Vendor Profile - Profile Photo Upload/Change | Clicked camera icon on avatar, selected new profile photo | Profile photo should upload and update successfully | Profile photo changed successfully | ✅ Pass |
+| 2026-09-14 | Vendor Dashboard - Mobile Responsive View (Overview/Bookings) | Checked Vendor Dashboard Overview and My Bookings pages in mobile view (600px width) | Layout should adjust properly, all elements should be visible and usable | Layout adjusted correctly, all stats cards, sidebar, and bookings list displayed properly on mobile | ✅ Pass |
 ## Known Issues
 - Update: The Google OAuth origin_mismatch issue has been resolved — Google Sign In worked successfully during vendor panel testing (2026-09-12).
 - Vendor Registration form text visibility bug — resolved (2026-09-13). See Fixes Applied section.
