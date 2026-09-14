@@ -5,7 +5,7 @@ const vendorProfileSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
-        unique: true // one vendor profile for one user
+        unique: true
     },
     businessName: {
         type: String,
@@ -14,22 +14,23 @@ const vendorProfileSchema = new mongoose.Schema({
     },
     category: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category', // Linked with Category model
+        ref: 'Category',
         required: true
+    },
+    phone: {
+        type: String,
+        trim: true,
+        default: ""
     },
     description: {
         type: String,
         trim: true,
         default: ""
     },
-    
-    // Cloudinary Profile Picture
     profileImage: {
         type: String,
         default: ""
     },
-
-    //  Task 4: Cloudinary Multi-Media Portfolio Arrays Validation
     portfolioImages: {
         type: [String],
         validate: [val => val.length <= 5, 'Maximum 5 portfolio images allowed.'],
@@ -40,28 +41,26 @@ const vendorProfileSchema = new mongoose.Schema({
         validate: [val => val.length <= 3, 'Maximum 3 portfolio videos allowed.'],
         default: []
     },
-
-    // OpenStreetMap Location & GeoJSON GeoSpatial Query Setup
     location: {
         country: { type: String, default: "Pakistan" },
         state: { type: String, default: "Punjab" },
         city: { type: String, required: true },
         address: { type: String, required: true },
-        
-        // GeoJSON standard for OpenStreetMap proximity search
         type: {
             type: String,
             enum: ['Point'],
             default: 'Point'
         },
         coordinates: {
-            type: [Number], // Format: [longitude, latitude]
-            default: [73.4851, 32.5742] // Mandi Bahauddin [Lng, Lat]
+            type: [Number],
+            default: [73.4851, 32.5742]
         }
     },
-    
     cnicImage: {
-        type: String // Cloudinary URL for verification document
+        type: String
+    },
+    licenseImage: {
+        type: String
     },
     isVerified: {
         type: Boolean,
@@ -84,8 +83,7 @@ const vendorProfileSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-//  Fast Filters & Spatial Search Indexing
-vendorProfileSchema.index({ "location": "2dsphere" }); // Proximity location search
+vendorProfileSchema.index({ "location": "2dsphere" });
 vendorProfileSchema.index({ category: 1 });
 vendorProfileSchema.index({ status: 1 });
 
