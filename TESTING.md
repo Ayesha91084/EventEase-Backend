@@ -89,6 +89,7 @@ Ye file frontend aur backend ki manual testing ka record hai.
 | 2026-09-14 | Vendor Dashboard - My Bookings | Clicked "My Bookings" from sidebar | Bookings list should load without errors (empty for new vendor) | Page loaded correctly showing "No bookings recorded in the system." | ✅ Pass |
 | 2026-09-14 | Vendor Profile - Portfolio Image Upload | Clicked "+ Upload Portfolio Media", selected 2 images | Images should upload successfully and display in Photos section | 2 images uploaded successfully | ✅ Pass |
 | 2026-09-14 | Vendor Profile - Portfolio Video Upload | Clicked "+ Upload Portfolio Media", selected a short video | Video should upload successfully and display in Videos section | Video uploaded successfully | ✅ Pass |
+| 2026-09-14 | Vendor Profile - Edit Profile | Edited Business Name, Phone, City, and Description fields, clicked Save Changes | Changes should save successfully and reflect on profile | All fields (except Category) saved and reflected correctly | ✅ Pass |
 ## Fixes Applied
 - Vendor Registration form had a CSS bug where typed text was invisible (text color was not set, blending with the background) across all input fields and the Business Category dropdown. Fixed by adding `color: #2b2319;` to the input/textarea rule in VendorRegistrationform.css and to the inline style of the category `<select>` in VendorRegistrationform.jsx.
 
@@ -96,3 +97,4 @@ Ye file frontend aur backend ki manual testing ka record hai.
 - Update: The Google OAuth origin_mismatch issue has been resolved — Google Sign In worked successfully during vendor panel testing (2026-09-12).
 - Vendor Registration form text visibility bug — resolved (2026-09-13). See Fixes Applied section.
 - **Blocked:** Category ID (instead of name) still showing on live Vercel site for Vendor Registration, Vendor Profile, and Vendors listing pages. Local code fixes (categoriesMap lookup) have been applied and pushed to GitHub, but live backend on Render (eventease-backend-1-ptzp.onrender.com) appears to not be reflecting the latest deployment. Needs Ayesha's Render access to verify/trigger deployment. Also seeing multiple 404 errors on live site for bookings/reviews endpoints (vendor/6aa4e48...) — needs backend route verification once Render access is available.
+- Vendor Profile "Edit Profile" form has a plain text input for Category instead of a dropdown — this can cause invalid/incorrect category values to be saved (should be a `<select>` populated from `/vendors/categories` like the registration form).
