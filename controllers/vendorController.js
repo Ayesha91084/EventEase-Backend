@@ -6,7 +6,7 @@ const Category = require('../models/Category');
 // 1. GET ALL APPROVED VENDORS (PUBLIC FRONTEND)
 const getAllVendors = async (req, res) => {
   try {
-    const vendors = await Vendor.find({ isVerified: true }).populate('userId', 'name email');
+    const vendors = await Vendor.find({ isVerified: true }).populate('userId', 'name email').populate('category', 'name');
     return res.status(200).json({
       success: true,
       data: vendors,
@@ -27,7 +27,8 @@ const getPendingVendors = async (req, res) => {
         { status: 'pending' }, 
         { isApproved: false }
       ] 
-    }).populate('userId', 'name email');
+    }).populate('userId', 'name email').populate('category', 'name');
+  
 
     return res.status(200).json({
       success: true,
@@ -259,13 +260,61 @@ const deletePortfolioMedia = async (req, res) => {
   }
 };
 
-// HELPER CONTROLLERS
-const registerVendor = async (req, res) => { /* logic */ };
+// 9. REGISTER NEW VENDOR
+const registerVendor = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id || req.body.userId;
+    const { businessName, category, phone, country, state, city, address, description } = req.body;
+
+    if (!businessName || !category || !city || !phone) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
+    }
+
+    let cnicImage = "";
+    let licenseImage = "";
+    if (req.files && req.files.length > 0) {
+      const uploaded = [];
+      for (const file of req.files) {
+        const fileBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+        const uploadRes = await cloudinary.uploader.upload(fileBase64, {
+          folder: 'EventEase/vendors/documents',
+        });
+        uploaded.push(uploadRes.secure_url);
+      }
+      if (uploaded.length === 2) { cnicImage = uploaded[0]; licenseImage = uploaded[1]; }
+      else if (uploaded.length === 1) { licenseImage = uploaded[0]; }
+    }
+
+    const vendor = await Vendor.create({
+      userId,
+      businessName,
+      category,
+      phone,
+      description,
+      location: { country, state, city, address },
+      cnicImage,
+      licenseImage,
+      status: 'pending',
+      isVerified: false
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Vendor registered! Pending admin verification.",
+      vendor
+    });
+  } catch (error) {
+    console.error("Register Vendor Error:", error);
+    return res.status(500).json({ success: false, message: "Vendor registration failed", error: error.message });
+  }
+};
+
+// 10. GET VENDOR'S OWN PROFILE (BY USER ID)
 const getVendorProfile = async (req, res) => {
   try {
     const userId = req.params.userId || req.user?.id || req.user?._id;
-    let vendor = await Vendor.findOne({ userId });
-    if (!vendor) vendor = await Vendor.findById(req.params.userId);
+    let vendor = await Vendor.findOne({ userId }).populate('category', 'name');
+    if (!vendor) vendor = await Vendor.findById(req.params.userId).populate('category', 'name');
 
     if (!vendor) {
       return res.status(404).json({ success: false, message: "Vendor not found" });
@@ -275,19 +324,87 @@ const getVendorProfile = async (req, res) => {
     return res.status(500).json({ success: false, message: err.message });
   }
 };
-const updateVendorLocation = async (req, res) => { /* logic */ };
-const searchVendorsByLocation = async (req, res) => { /* logic */ };
+
+// 11. UPDATE VENDOR LOCATION (MAP / COORDINATES)
+const updateVendorLocation = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    const { latitude, longitude, city, address, country, state } = req.body;
+
+    const updatedData = {};
+    if (latitude && longitude) updatedData['location.coordinates'] = [longitude, latitude];
+    if (city) updatedData['location.city'] = city;
+    if (address) updatedData['location.address'] = address;
+    if (country) updatedData['location.country'] = country;
+    if (state) updatedData['location.state'] = state;
+
+    const vendor = await Vendor.findOneAndUpdate({ userId }, { $set: updatedData }, { new: true });
+    if (!vendor) return res.status(404).json({ success: false, message: "Vendor not found" });
+
+    return res.status(200).json({ success: true, message: "Location updated", vendor });
+  } catch (error) {
+    console.error("Update Location Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to update location", error: error.message });
+  }
+};
+
+// 12. SEARCH VENDORS (PUBLIC /vendors PAGE)
+const searchVendorsByLocation = async (req, res) => {
+  try {
+    const { country, state, city, category } = req.query;
+    const filter = { isVerified: true };
+    if (country) filter['location.country'] = country;
+    if (state) filter['location.state'] = state;
+    if (city) filter['location.city'] = new RegExp(`^${city}$`, 'i');
+    if (category) filter.category = category;
+
+    const vendors = await Vendor.find(filter)
+      .populate('category', 'name')
+      .populate('userId', 'name email');
+
+    return res.status(200).json({ success: true, count: vendors.length, vendors });
+  } catch (error) {
+    console.error("Search Vendors Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to search vendors", error: error.message });
+  }
+};
+
+// 13. GET SINGLE VENDOR BY ID
 const getVendorById = async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.params.id);
+    const vendor = await Vendor.findById(req.params.id).populate('category', 'name');
     if (!vendor) return res.status(404).json({ success: false, message: "Vendor not found" });
     return res.status(200).json({ success: true, vendor });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }
 };
-const getCategories = async (req, res) => { /* logic */ };
-const createCategory = async (req, res) => { /* logic */ };
+
+// 14. GET ALL CATEGORIES
+const getCategories = async (req, res) => {
+  try {
+    const categories = await Category.find({ isActive: true }).sort({ name: 1 });
+    return res.status(200).json({ success: true, categories });
+  } catch (error) {
+    console.error("Get Categories Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch categories", error: error.message });
+  }
+};
+
+// 15. CREATE NEW CATEGORY (ADMIN)
+const createCategory = async (req, res) => {
+  try {
+    const { name, description, icon } = req.body;
+    if (!name) {
+      return res.status(400).json({ success: false, message: "Category name is required" });
+    }
+    const category = await Category.create({ name, description, icon });
+    return res.status(201).json({ success: true, category });
+  } catch (error) {
+    console.error("Create Category Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to create category", error: error.message });
+  }
+};
 
 module.exports = {
   getAllVendors,
