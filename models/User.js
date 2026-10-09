@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: function() {
-            return !this.googleId; // Sirf manual signup par required hai, Google Login par nahi
+            return !this.googleId; // just manual signup at required,  not for Google Login
         }
     },
     googleId: {
