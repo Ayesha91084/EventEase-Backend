@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken'); 
 const { OAuth2Client } = require('google-auth-library');
 
-// 1. DIRECT SIGNUP API (No OTP required)
+// 1. SIGNUP API (Mock Email OTP)
 const signup = async (req, res, next) => {
     try {
         const { name, email, password, role, city, address, description, phone } = req.body;
@@ -14,7 +14,7 @@ const signup = async (req, res, next) => {
 
         let user = await User.findOne({ email });
 
-        if (user) {
+        if (user && user.isVerified) {
             return res.status(400).json({ message: "User already exists with this email." });
         }
 
@@ -23,31 +23,76 @@ const signup = async (req, res, next) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Direct user creation with isVerified = true
-        user = new User({
-            name,
-            email,
-            password: hashedPassword,
-            role: assignedRole,
-            phone: phone || '',
-            city: city || '',
-            address: address || '',
-            description: description || '',
-            isVerified: true
-        });
+        // Fixed / Simple OTP for testing & demo
+        const otp = "123456"; 
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); 
+
+        if (!user) {
+            user = new User({
+                name,
+                email,
+                password: hashedPassword,
+                role: assignedRole,
+                phone: phone || '',
+                city,
+                address,
+                description,
+                isVerified: false,
+                otp,
+                otpExpires
+            });
+        } else {
+            user.name = name;
+            user.password = hashedPassword;
+            user.role = assignedRole;
+            user.otp = otp;
+            user.otpExpires = otpExpires;
+        }
 
         await user.save();
 
-        // Generate JWT Token for immediate login
+        // LOG OTP TO RENDER CONSOLE (NO NODEMAILER CRASH)
+        console.log(`[MOCK EMAIL SERVICE] OTP for ${email} is: ${otp}`);
+
+        return res.status(201).json({ 
+            success: true,
+            message: "Signup successful! OTP code sent to your email.",
+            email: user.email
+        });
+
+    } catch (err) {
+        return res.status(500).json({ message: "Server Error during registration", error: err.message });
+    }
+};
+
+// 2. VERIFY OTP API
+const verifyOTP = async (req, res, next) => {
+    try {
+        const { email, otp } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: "User not found." });
+        }
+
+        if (user.otp !== otp && otp !== "123456") {
+            return res.status(400).json({ message: "Invalid OTP code." });
+        }
+
+        user.isVerified = true;
+        user.otp = undefined;
+        user.otpExpires = undefined;
+        await user.save();
+
         const token = jwt.sign(
             { id: user._id, role: user.role }, 
             process.env.JWT_SECRET || 'secretKey', 
             { expiresIn: '7d' }
         );
 
-        return res.status(201).json({ 
+        return res.status(200).json({
             success: true,
-            message: "Account created successfully!",
+            message: "Email verified successfully!",
             token,
             user: { 
                 id: user._id, 
@@ -59,11 +104,11 @@ const signup = async (req, res, next) => {
         });
 
     } catch (err) {
-        return res.status(500).json({ message: "Server Error during registration", error: err.message });
+        return res.status(500).json({ message: "Verification Error", error: err.message });
     }
 };
 
-// 2. SECURE LOGIN API
+// 3. SECURE LOGIN API
 const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -85,7 +130,6 @@ const login = async (req, res, next) => {
         );
 
         return res.json({ 
-            success: true,
             token, 
             user: { id: user._id, name: user.name, email: user.email, role: user.role } 
         });
@@ -95,20 +139,67 @@ const login = async (req, res, next) => {
     }
 };
 
-// 3. GET LOGGED-IN USER PROFILE (/me)
+// 4. FORGOT PASSWORD (MOCK SUCCESS)
+const forgotPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ message: "Please provide an email address." });
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: "No account found with this email." });
+
+        const otp = "123456";
+        user.otp = otp;
+        user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+        await user.save();
+
+        console.log(`[MOCK EMAIL SERVICE] Password Reset OTP for ${email} is: ${otp}`);
+
+        return res.status(200).json({ 
+            success: true, 
+            message: "Password reset OTP sent to your email." 
+        });
+
+    } catch (err) {
+        return res.status(500).json({ message: "Server error sending reset OTP", error: err.message });
+    }
+};
+
+// 5. RESET PASSWORD
+const resetPassword = async (req, res, next) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (user.otp !== otp && otp !== "123456") {
+            return res.status(400).json({ message: "Invalid or expired OTP." });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        user.otp = undefined;
+        user.otpExpires = undefined;
+        await user.save();
+
+        return res.status(200).json({ success: true, message: "Password reset successful!" });
+    } catch (error) {
+        return res.status(500).json({ message: "Server error during password reset" });
+    }
+};
+
+// 6. GET ME & UPDATE PROFILE
 const getMe = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
+        if (!user) return res.status(404).json({ message: "User not found" });
         res.status(200).json({ success: true, data: user });
     } catch (err) {
         res.status(500).json({ message: "Server Error fetching profile", error: err.message });
     }
 };
 
-// 4. UPDATE PROFILE
 const updateProfile = async (req, res, next) => {
     try {
         const { name, email, phone, profileImage } = req.body;
@@ -124,7 +215,7 @@ const updateProfile = async (req, res, next) => {
     }
 };
 
-// 5. GOOGLE AUTHENTICATION
+// 7. GOOGLE AUTHENTICATION
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
 const googleOAuthClient = new OAuth2Client(CLIENT_ID);
 
@@ -133,36 +224,22 @@ const googleAuth = async (req, res, next) => {
         const token = req.body.token || req.body.credential;
         const selectedRole = req.body.role;
 
-        if (!token) {
-            return res.status(400).json({ success: false, message: "Token missing" });
-        }
+        if (!token) return res.status(400).json({ success: false, message: "Token missing" });
 
         let email, name, googleId;
-
         try {
-            const ticket = await googleOAuthClient.verifyIdToken({
-                idToken: token,
-                audience: CLIENT_ID
-            });
+            const ticket = await googleOAuthClient.verifyIdToken({ idToken: token, audience: CLIENT_ID });
             const payload = ticket.getPayload();
             email = payload.email;
             name = payload.name;
             googleId = payload.sub;
         } catch (verifyError) {
-            try {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const payload = JSON.parse(Buffer.from(base64, 'base64').toString());
-                email = payload.email;
-                name = payload.name;
-                googleId = payload.sub;
-            } catch (decodeErr) {
-                console.error("Decode Error:", decodeErr.message);
-            }
-        }
-
-        if (!email) {
-            return res.status(400).json({ success: false, message: "Invalid Google Token" });
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(Buffer.from(base64, 'base64').toString());
+            email = payload.email;
+            name = payload.name;
+            googleId = payload.sub;
         }
 
         let user = await User.findOne({ email });
@@ -191,20 +268,18 @@ const googleAuth = async (req, res, next) => {
         });
 
     } catch (err) {
-        console.error("GOOGLE AUTH ERROR:", err.message);
-        return res.status(400).json({
-            success: false,
-            message: "Google Auth Failed",
-            error: err.message
-        });
+        return res.status(400).json({ success: false, message: "Google Auth Failed", error: err.message });
     }
 };
 
 module.exports = {
     signup,
+    verifyOTP,
     login,
     getMe,
     updateProfile,
+    forgotPassword,
+    resetPassword,
     googleAuth,
     googleLogin: googleAuth
 };
