@@ -1,22 +1,9 @@
 const User = require('../models/User'); 
 const bcrypt = require('bcryptjs'); 
 const jwt = require('jsonwebtoken'); 
-const nodemailer = require('nodemailer');
 const { OAuth2Client } = require('google-auth-library');
 
-// Transporter Setup for Nodemailer
-// Explicit SMTP Port 465 SSL configuration used for Render/Vercel server deployment
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, 
-    auth: {
-        user: process.env.EMAIL_USER || "fyp20222026@gmail.com",
-        pass: process.env.EMAIL_PASS
-    }
-});
-
-// 1. SIGNUP API (For Public Customers/Vendors)
+// 1. DIRECT SIGNUP API (No OTP required)
 const signup = async (req, res, next) => {
     try {
         const { name, email, password, role, city, address, description, phone } = req.body;
@@ -27,7 +14,7 @@ const signup = async (req, res, next) => {
 
         let user = await User.findOne({ email });
 
-        if (user && user.isVerified) {
+        if (user) {
             return res.status(400).json({ message: "User already exists with this email." });
         }
 
@@ -36,96 +23,31 @@ const signup = async (req, res, next) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        // Syntax issue resolved
-        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); 
-
-        if (!user) {
-            user = new User({
-                name,
-                email,
-                password: hashedPassword,
-                role: assignedRole,
-                phone: phone || '',
-                city,
-                address,
-                description,
-                isVerified: false,
-                otp,
-                otpExpires
-            });
-        } else {
-            user.name = name;
-            user.password = hashedPassword;
-            user.role = assignedRole;
-            user.otp = otp;
-            user.otpExpires = otpExpires;
-        }
-
-        // Send OTP email FIRST before completing request
-        try {
-            await transporter.sendMail({
-                from: `"EventEase Support" <${process.env.EMAIL_USER || "fyp20222026@gmail.com"}>`,
-                to: email,
-                subject: 'EventEase - Verify Your Email',
-                html: `<div style="font-family: Arial, sans-serif; padding: 20px;">
-                        <h2>Welcome to EventEase!</h2>
-                        <p>Your OTP verification code is:</p>
-                        <h1 style="color: #4A90E2; letter-spacing: 4px;">${otp}</h1>
-                        <p>This code will expire in 10 minutes.</p>
-                       </div>`
-            });
-        } catch (mErr) {
-            console.error("Signup Mail Send Error Detailed:", mErr);
-            return res.status(500).json({ 
-                success: false, 
-                message: "Email delivery failed! Please check App Password in Render settings.", 
-                error: mErr.message 
-            });
-        }
-
-        // Save user to DB after mail dispatch succeeds
-        await user.save();
-
-        return res.status(201).json({ 
-            success: true,
-            message: "Signup successful! OTP code sent to your email.",
-            email: user.email
+        // Direct user creation with isVerified = true
+        user = new User({
+            name,
+            email,
+            password: hashedPassword,
+            role: assignedRole,
+            phone: phone || '',
+            city: city || '',
+            address: address || '',
+            description: description || '',
+            isVerified: true
         });
 
-    } catch (err) {
-        return res.status(500).json({ message: "Server Error during registration", error: err.message });
-    }
-};
-
-// 2. VERIFY OTP API
-const verifyOTP = async (req, res, next) => {
-    try {
-        const { email, otp } = req.body;
-
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: "User not found." });
-        }
-
-        if (user.otp !== otp || new Date() > user.otpExpires) {
-            return res.status(400).json({ message: "Invalid or expired OTP code." });
-        }
-
-        user.isVerified = true;
-        user.otp = undefined;
-        user.otpExpires = undefined;
         await user.save();
 
+        // Generate JWT Token for immediate login
         const token = jwt.sign(
             { id: user._id, role: user.role }, 
             process.env.JWT_SECRET || 'secretKey', 
             { expiresIn: '7d' }
         );
 
-        return res.status(200).json({
+        return res.status(201).json({ 
             success: true,
-            message: "Email verified successfully!",
+            message: "Account created successfully!",
             token,
             user: { 
                 id: user._id, 
@@ -137,11 +59,11 @@ const verifyOTP = async (req, res, next) => {
         });
 
     } catch (err) {
-        return res.status(500).json({ message: "Verification Error", error: err.message });
+        return res.status(500).json({ message: "Server Error during registration", error: err.message });
     }
 };
 
-// 3. SECURE LOGIN API
+// 2. SECURE LOGIN API
 const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -149,12 +71,6 @@ const login = async (req, res, next) => {
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ message: "Invalid Credentials" });
-        }
-
-        if (!user.isVerified && user.role !== 'admin') {
-            return res.status(403).json({ 
-                message: "Email is not verified. Please verify your OTP first." 
-            });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -169,6 +85,7 @@ const login = async (req, res, next) => {
         );
 
         return res.json({ 
+            success: true,
             token, 
             user: { id: user._id, name: user.name, email: user.email, role: user.role } 
         });
@@ -178,7 +95,7 @@ const login = async (req, res, next) => {
     }
 };
 
-// 4. GET LOGGED-IN USER PROFILE (/me)
+// 3. GET LOGGED-IN USER PROFILE (/me)
 const getMe = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
@@ -191,7 +108,7 @@ const getMe = async (req, res, next) => {
     }
 };
 
-// 5. UPDATE PROFILE
+// 4. UPDATE PROFILE
 const updateProfile = async (req, res, next) => {
     try {
         const { name, email, phone, profileImage } = req.body;
@@ -207,63 +124,7 @@ const updateProfile = async (req, res, next) => {
     }
 };
 
-// 6. FORGOT & RESET PASSWORD
-const forgotPassword = async (req, res, next) => {
-    try {
-        const { email } = req.body;
-        if (!email) return res.status(400).json({ message: "Please provide an email address." });
-
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ message: "No account found with this email." });
-
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        user.otp = otp;
-        user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
-        await user.save();
-
-        try {
-            await transporter.sendMail({
-                from: `"EventEase Support" <${process.env.EMAIL_USER || "fyp20222026@gmail.com"}>`,
-                to: email,
-                subject: 'EventEase - Password Reset OTP',
-                html: `<h3>Password Reset Code: <b>${otp}</b></h3>`
-            });
-        } catch (mErr) {
-            console.error("Mail Send Error:", mErr.message);
-            return res.status(500).json({ message: "Failed to send reset email.", error: mErr.message });
-        }
-
-        res.status(200).json({ success: true, message: "Password reset OTP sent to your email." });
-
-    } catch (err) {
-        res.status(500).json({ message: "Server error sending reset OTP", error: err.message });
-    }
-};
-
-const resetPassword = async (req, res, next) => {
-    try {
-        const { email, otp, newPassword } = req.body;
-
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        if (!user.otp || user.otp !== otp || new Date() > user.otpExpires) {
-            return res.status(400).json({ message: "Invalid or expired reset session. Please verify OTP again." });
-        }
-
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(newPassword, salt);
-        user.otp = undefined;
-        user.otpExpires = undefined;
-        await user.save();
-
-        res.status(200).json({ message: "Password reset successful!" });
-    } catch (error) {
-        res.status(500).json({ message: "Server error during password reset" });
-    }
-};
-
-// 7. GOOGLE AUTHENTICATION
+// 5. GOOGLE AUTHENTICATION
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
 const googleOAuthClient = new OAuth2Client(CLIENT_ID);
 
@@ -341,12 +202,9 @@ const googleAuth = async (req, res, next) => {
 
 module.exports = {
     signup,
-    verifyOTP,
     login,
     getMe,
     updateProfile,
-    forgotPassword,
-    resetPassword,
     googleAuth,
     googleLogin: googleAuth
 };
