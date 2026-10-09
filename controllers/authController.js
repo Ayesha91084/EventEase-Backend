@@ -5,19 +5,19 @@ const nodemailer = require('nodemailer');
 const { OAuth2Client } = require('google-auth-library');
 
 // Transporter Setup for Nodemailer
+// Explicit SMTP Port 465 SSL configuration used for Render/Vercel server deployment
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, 
     auth: {
         user: process.env.EMAIL_USER || "fyp20222026@gmail.com",
         pass: process.env.EMAIL_PASS
     }
 });
 
-
 // 1. SIGNUP API (For Public Customers/Vendors)
-
-
-        const signup = async (req, res, next) => {
+const signup = async (req, res, next) => {
     try {
         const { name, email, password, role, city, address, description, phone } = req.body;
 
@@ -37,7 +37,8 @@ const transporter = nodemailer.createTransport({
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+        // Syntax issue resolved
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); 
 
         if (!user) {
             user = new User({
@@ -61,19 +62,30 @@ const transporter = nodemailer.createTransport({
             user.otpExpires = otpExpires;
         }
 
-        await user.save();
-
-        // Send OTP email
+        // Send OTP email FIRST before completing request
         try {
             await transporter.sendMail({
                 from: `"EventEase Support" <${process.env.EMAIL_USER || "fyp20222026@gmail.com"}>`,
                 to: email,
                 subject: 'EventEase - Verify Your Email',
-                html: `<h3>Your OTP Code: <b>${otp}</b></h3><p>This code will expire in 10 minutes.</p>`
+                html: `<div style="font-family: Arial, sans-serif; padding: 20px;">
+                        <h2>Welcome to EventEase!</h2>
+                        <p>Your OTP verification code is:</p>
+                        <h1 style="color: #4A90E2; letter-spacing: 4px;">${otp}</h1>
+                        <p>This code will expire in 10 minutes.</p>
+                       </div>`
             });
         } catch (mErr) {
-            console.error("Signup Mail Send Error:", mErr.message);
+            console.error("Signup Mail Send Error Detailed:", mErr);
+            return res.status(500).json({ 
+                success: false, 
+                message: "Email delivery failed! Please check App Password in Render settings.", 
+                error: mErr.message 
+            });
         }
+
+        // Save user to DB after mail dispatch succeeds
+        await user.save();
 
         return res.status(201).json({ 
             success: true,
@@ -86,9 +98,7 @@ const transporter = nodemailer.createTransport({
     }
 };
 
-
 // 2. VERIFY OTP API
-
 const verifyOTP = async (req, res, next) => {
     try {
         const { email, otp } = req.body;
@@ -103,6 +113,8 @@ const verifyOTP = async (req, res, next) => {
         }
 
         user.isVerified = true;
+        user.otp = undefined;
+        user.otpExpires = undefined;
         await user.save();
 
         const token = jwt.sign(
@@ -129,9 +141,7 @@ const verifyOTP = async (req, res, next) => {
     }
 };
 
-
-// 3. SECURE LOGIN API (DB Bcrypt Verification)
-
+// 3. SECURE LOGIN API
 const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -168,9 +178,7 @@ const login = async (req, res, next) => {
     }
 };
 
-
 // 4. GET LOGGED-IN USER PROFILE (/me)
-
 const getMe = async (req, res, next) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
@@ -183,9 +191,7 @@ const getMe = async (req, res, next) => {
     }
 };
 
-
 // 5. UPDATE PROFILE
-
 const updateProfile = async (req, res, next) => {
     try {
         const { name, email, phone, profileImage } = req.body;
@@ -201,9 +207,7 @@ const updateProfile = async (req, res, next) => {
     }
 };
 
-
 // 6. FORGOT & RESET PASSWORD
-
 const forgotPassword = async (req, res, next) => {
     try {
         const { email } = req.body;
@@ -226,6 +230,7 @@ const forgotPassword = async (req, res, next) => {
             });
         } catch (mErr) {
             console.error("Mail Send Error:", mErr.message);
+            return res.status(500).json({ message: "Failed to send reset email.", error: mErr.message });
         }
 
         res.status(200).json({ success: true, message: "Password reset OTP sent to your email." });
@@ -242,7 +247,6 @@ const resetPassword = async (req, res, next) => {
         const user = await User.findOne({ email });
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // again verify otp no step by of otp
         if (!user.otp || user.otp !== otp || new Date() > user.otpExpires) {
             return res.status(400).json({ message: "Invalid or expired reset session. Please verify OTP again." });
         }
@@ -259,9 +263,7 @@ const resetPassword = async (req, res, next) => {
     }
 };
 
-
 // 7. GOOGLE AUTHENTICATION
-
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "441112021745-gjvon0valn6vmalq9872u497rqi0npoa.apps.googleusercontent.com";
 const googleOAuthClient = new OAuth2Client(CLIENT_ID);
 
